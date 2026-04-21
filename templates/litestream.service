@@ -1,0 +1,40 @@
+# Boring Stack reference systemd unit for Litestream.
+# Install at /etc/systemd/system/litestream.service then:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now litestream
+#
+# Litestream replicates SQLite to S3-compatible storage continuously.
+# /etc/litestream.env holds R2_KEY / R2_SECRET (mode 0600, root only).
+
+[Unit]
+Description=litestream
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/litestream replicate -config /etc/litestream.yml
+Restart=always
+RestartSec=5
+
+# Graceful shutdown. Lets Litestream flush the last WAL frame before stopping.
+KillSignal=SIGTERM
+TimeoutStopSec=10s
+
+# Litestream opens many WAL fragments under load.
+LimitNOFILE=4096
+
+# Secrets (R2 keys) live here, mode 0600, root-only.
+EnvironmentFile=/etc/litestream.env
+
+# Runs as root by default to ensure read access to your SQLite file.
+# To run as a dedicated user: create a `litestream` user with read access
+# to the SQLite path + write access to the WAL files, then uncomment:
+# User=litestream
+
+# Logs: journalctl -u litestream -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

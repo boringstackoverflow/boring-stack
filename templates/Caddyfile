@@ -1,0 +1,36 @@
+# Boring Stack reference Caddyfile.
+# Caddy auto-handles TLS via Let's Encrypt. No certbot, no cron, no nginx.
+# Replace your-domain.example.com with your real hostname.
+
+your-domain.example.com {
+    encode zstd gzip
+
+    header {
+        # Force HTTPS for 1 year, include subdomains, eligible for HSTS preload.
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Don't let browsers MIME-sniff your responses.
+        X-Content-Type-Options "nosniff"
+        # Block iframing (clickjacking defense).
+        X-Frame-Options "DENY"
+        # Don't leak full URLs in Referer headers to third parties.
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Defang legacy Permissions-Policy features unless you opt in.
+        Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=()"
+        # Strip the Server header so you don't advertise your stack.
+        -Server
+    }
+
+    reverse_proxy 127.0.0.1:8080
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 10
+        }
+    }
+}
+
+# Redirect www → apex. Delete this block if you prefer www as canonical.
+www.your-domain.example.com {
+    redir https://your-domain.example.com{uri} permanent
+}

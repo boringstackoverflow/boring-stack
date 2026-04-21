@@ -1,0 +1,54 @@
+# Boring Stack reference systemd unit for a Go app.
+# Install at /etc/systemd/system/app.service then:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now app
+#
+# Hardened by default. Each flag below has a one-line reason.
+
+[Unit]
+Description=app
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/home/deploy/app
+ExecStart=/home/deploy/app/app
+Restart=on-failure
+RestartSec=2
+
+# Graceful shutdown. App should listen for SIGTERM and drain in-flight requests.
+KillSignal=SIGTERM
+TimeoutStopSec=10s
+
+# Resource ceilings. Tune for your app.
+LimitNOFILE=65535
+# MemoryMax=512M
+
+# App config
+Environment=PORT=8080
+
+# Sandbox: read-only root + writable data dir.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/deploy/app/data
+PrivateTmp=true
+
+# Sandbox: kernel and namespace isolation. Verify with:
+#   systemd-analyze security app.service
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+SystemCallArchitectures=native
+
+# Logs go to journald. Read with: journalctl -u app -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,33 @@
+# Boring Stack reference Litestream config.
+# Cloudflare R2 is the cheapest sane S3-compatible target (~$0.50/mo for typical apps).
+# Replace <account> with your R2 account ID and bucket with your real bucket name.
+# Secrets come from /etc/litestream.env (mode 0600, root-only). See litestream.service.
+
+dbs:
+  - path: /home/deploy/app/data/app.db
+
+    # How often to take a full snapshot. Smaller = faster restore + more storage cost.
+    # Default is 24h. 1h is a good middle for an app with frequent writes.
+    snapshot-interval: 1h
+
+    # How long to retain snapshots and WAL frames. After this age, older data is pruned.
+    # Default is 24h. 168h (7 days) gives you room to roll back from a bad deploy.
+    retention: 168h
+
+    replicas:
+      - type: s3
+        endpoint: https://<account>.r2.cloudflarestorage.com
+        bucket: app-backups
+        path: app.db
+        access-key-id: ${R2_KEY}
+        secret-access-key: ${R2_SECRET}
+
+      # Second replica for cross-provider redundancy (optional but recommended for paid apps).
+      # Backblaze B2 is S3-compatible, ~$0.005/GB/mo, no egress within their network.
+      # Add B2_KEY / B2_SECRET to /etc/litestream.env before uncommenting.
+      # - type: s3
+      #   endpoint: https://s3.us-west-002.backblazeb2.com
+      #   bucket: app-backups-b2
+      #   path: app.db
+      #   access-key-id: ${B2_KEY}
+      #   secret-access-key: ${B2_SECRET}

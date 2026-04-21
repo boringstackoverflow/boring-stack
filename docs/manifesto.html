@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Boring Stack Manifesto</title>
+<meta name="description" content="Seven principles for shipping software that stays out of your way. Boring is a feature, your cloud bill is the metric, SQLite is a database.">
+<link rel="canonical" href="https://boringstackoverflow.github.io/boring-stack/manifesto.html">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<meta property="og:title" content="The Boring Stack Manifesto">
+<meta property="og:description" content="Seven principles for shipping software that stays out of your way.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://boringstackoverflow.github.io/boring-stack/manifesto.html">
+<meta property="og:site_name" content="Boring Stack">
+<meta property="og:image" content="https://boringstackoverflow.github.io/boring-stack/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Boring Stack Manifesto">
+<meta name="twitter:description" content="Seven principles for shipping software that stays out of your way.">
+<meta name="twitter:image" content="https://boringstackoverflow.github.io/boring-stack/og-image.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "The Boring Stack Manifesto",
+  "description": "Seven principles for shipping software that stays out of your way.",
+  "url": "https://boringstackoverflow.github.io/boring-stack/manifesto.html",
+  "image": "https://boringstackoverflow.github.io/boring-stack/og-image.png",
+  "author": { "@type": "Organization", "name": "boringstackoverflow", "url": "https://github.com/boringstackoverflow" },
+  "publisher": { "@type": "Organization", "name": "boringstackoverflow", "url": "https://boringstackoverflow.github.io/boring-stack/" },
+  "license": "https://github.com/boringstackoverflow/boring-stack/blob/main/LICENSE"
+}
+</script>
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="./">boring-stack</a></span>
+  <span class="links">
+    <a href="index.html">install</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<h1 class="hero">The Boring Stack Manifesto<span class="dot">.</span></h1>
+
+<p class="subhead">Seven principles for shipping software that stays out of your way.</p>
+
+<ol class="principles">
+
+  <li id="p1">
+    <span class="num">01.</span>
+    <h3><a href="#p1">Boring is a feature, not a fallback.</a></h3>
+    <p>Mature tools have fewer surprises at 2am. They've shipped through enough corner cases that the bug you'd hit was hit, reported, and fixed five years ago. The thrill of the new is mostly procrastination wearing a hoodie.</p>
+    <p>Pick the thing your future self at 3am will be grateful for, not the thing your current self at 11pm finds exciting. They're rarely the same.</p>
+  </li>
+
+  <li id="p2">
+    <span class="num">02.</span>
+    <h3><a href="#p2">Your cloud bill is the metric.</a></h3>
+    <p>Architecture decisions that don't show up on the bill at 100 customers are theoretical. The ones that do show up are usually the ones you wish you'd made differently.</p>
+    <p>The boring stack puts your monthly cost low enough that a profitable side project costs less than a coffee subscription. Below that threshold, you can afford to keep shipping until something works. Above it, every month is pressure.</p>
+  </li>
+
+  <li id="p3">
+    <span class="num">03.</span>
+    <h3><a href="#p3">SQLite is a database. Stop apologizing.</a></h3>
+    <p>In WAL mode, on a $5 VPS, SQLite handles more writes per second than most apps will ever see. Litestream replicates it continuously to S3-compatible storage for under a dollar a month. You can restore to any second in the past 24 hours.</p>
+    <p>The "what if I outgrow it" worry is mostly a tax you pay forever to avoid a problem you may never have. When you do hit the wall, <code>pgloader</code> migrates the file in an afternoon.</p>
+  </li>
+
+  <li id="p4">
+    <span class="num">04.</span>
+    <h3><a href="#p4">If it requires Kubernetes, you don't have a web app, you have a server farm.</a></h3>
+    <p>Kubernetes is correct for the company that needed it. For the side project, it's a hobby on top of a hobby, with orchestration overhead larger than the thing being orchestrated.</p>
+    <p>systemd is already on every Linux box you'll ever rent. <code>Restart=on-failure</code> is one line. <code>journalctl</code> is your log aggregator. The complexity you skip is complexity you don't have to maintain at 2am.</p>
+  </li>
+
+  <li id="p5">
+    <span class="num">05.</span>
+    <h3><a href="#p5">Your deploy script should fit on a postcard.</a></h3>
+    <p>Build. scp. systemctl restart. curl healthz. That's a deploy.</p>
+    <p>If yours is more than that, ask what each extra line buys you. Most extra lines buy speed at traffic levels you don't have, or safety against failure modes that almost never fire on a single-server app. The simpler script costs you nothing and you can read it without coffee.</p>
+  </li>
+
+  <li id="p6">
+    <span class="num">06.</span>
+    <h3><a href="#p6">One person should be able to fully understand the running system.</a></h3>
+    <p>Complexity that exceeds one head is complexity you pay for forever. In onboarding, in debugging, in the latency between "we should do X" and someone confident enough to do X.</p>
+    <p>The test: if you got hit by a bus tomorrow, could a competent stranger read the repo on Saturday and ship a fix on Sunday? If no, simplify until yes.</p>
+  </li>
+
+  <li id="p7">
+    <span class="num">07.</span>
+    <h3><a href="#p7">The babysitter is more interesting than the cleverness.</a></h3>
+    <p>Boring tech needs operational discipline: backups verified, alerts when the cron silently stops, restore drills, kill switches. That discipline IS the work. The stack is just the canvas.</p>
+    <p>You don't earn the right to be clever in your code by being clever in your code. You earn it by making sure the boring parts work, every day, without you watching.</p>
+  </li>
+
+</ol>
+
+<section style="margin-top: 80px;">
+  <h2>How to use this</h2>
+  <p>Quote it. Link it. Print it on a postcard. Argue with it. Fork it and write your own. Each principle has a permalink. Click the title to copy it.</p>
+  <p>The skill at <a href="index.html">boring-stack</a> operationalizes the manifesto: install <code>/boring-stack</code> in Claude Code (or any of the other 9 supported AI coding tools) and the seven principles become the defaults the agent argues for.</p>
+</section>
+
+<footer>
+  <span>boringstackoverflow / 2026 / MIT / <a href="mailto:boringstackoverflow@gmail.com">boringstackoverflow@gmail.com</a></span>
+  <span>
+    <a href="index.html">install</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</footer>
+
+</body>
+</html>

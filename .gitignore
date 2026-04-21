@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# editors / IDEs
+.vscode/
+.idea/
+*.swp
+*~
+
+# local dev artifacts
+*.tar.gz
+/dist/

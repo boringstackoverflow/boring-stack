@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boring Stack: Build web apps the boring way.</title>
+<meta name="description" content="An AI-coding skill (Claude Code, Cursor, Copilot, Codex, +7 more) plus reference templates for Go + SQLite + Litestream + Caddy + a $5 VPS.">
+<link rel="canonical" href="https://boringstackoverflow.github.io/boring-stack/">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<meta property="og:title" content="Boring Stack: Build web apps the boring way.">
+<meta property="og:description" content="An AI-coding skill plus reference templates for Go + SQLite + Litestream + Caddy + a $5 VPS. Works with Claude Code, Cursor, Copilot, Codex, and more.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://boringstackoverflow.github.io/boring-stack/">
+<meta property="og:site_name" content="Boring Stack">
+<meta property="og:image" content="https://boringstackoverflow.github.io/boring-stack/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Boring Stack: Build web apps the boring way. curl | bash works with Claude Code, Cursor, Copilot, Codex, Aider, and more.">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Boring Stack: Build web apps the boring way.">
+<meta name="twitter:description" content="An AI-coding skill plus reference templates for Go + SQLite + Litestream + Caddy + a $5 VPS.">
+<meta name="twitter:image" content="https://boringstackoverflow.github.io/boring-stack/og-image.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "Boring Stack",
+  "description": "An AI-coding skill plus reference templates for Go + SQLite + Litestream + Caddy + a $5 VPS. Works with Claude Code, Cursor, Copilot, Codex, Aider, Cline, Continue, Gemini, Windsurf, and Zed.",
+  "url": "https://boringstackoverflow.github.io/boring-stack/",
+  "codeRepository": "https://github.com/boringstackoverflow/boring-stack",
+  "programmingLanguage": ["Go", "Shell"],
+  "license": "https://github.com/boringstackoverflow/boring-stack/blob/main/LICENSE",
+  "image": "https://boringstackoverflow.github.io/boring-stack/og-image.png",
+  "keywords": "claude-code, cursor, copilot, codex, ai-coding, sqlite, litestream, golang, caddy, systemd, devops, boring-stack"
+}
+</script>
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="./">boring-stack</a></span>
+  <span class="links">
+    <a href="manifesto.html">manifesto</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<h1 class="hero">Build web apps the boring way<span class="dot">.</span></h1>
+
+<p class="subhead">A Claude Code skill plus reference templates. Side projects, indie products, internal tools, anything that runs as one Linux process. Go, SQLite, Litestream, Caddy, systemd, a $5 VPS.</p>
+
+<pre class="terminal" aria-label="cost summary">
+<span class="prompt">$</span> borela cost --last 30d
+hetzner cx22       <span class="num">$4.59</span>
+cloudflare r2      <span class="num">$0.12</span>
+borela.sh domain   <span class="num">$3.25</span>
+resend (free tier) <span class="num">$0.00</span>
+─────────────────────────
+<span class="total">total              $7.96/mo</span>
+</pre>
+
+<section>
+  <h2>What this is</h2>
+  <ol class="steps">
+    <li><strong>The skill.</strong> Type <code>/boring-stack</code> in any Claude Code session and Claude loads opinionated defaults for that project. Pushes back on Postgres, Vercel, ORMs, Docker, and microservices when they don't fit the archetype. Two sentences plus a question per pushback. Always defers to your call.</li>
+    <li><strong>The templates.</strong> The exact <code>deploy.sh</code>, <code>Caddyfile</code>, <code>app.service</code>, and Litestream config the Borela cloud build runs on (Borela is pre-launch — the templates have been live-fired against the dogfood deploy). Drop them in, replace the hostnames, ship. Zero magic.</li>
+    <li><strong>The manifesto.</strong> Seven principles for shipping software that stays out of your way. Quote it, link it, fork it. <a href="manifesto.html">Read the manifesto.</a></li>
+  </ol>
+</section>
+
+<section>
+  <h2>Install</h2>
+
+  <p>One line. Works with every major AI coding tool.</p>
+
+  <pre class="terminal" aria-label="user-level install"
+       data-copy="curl -fsSL https://boringstackoverflow.github.io/boring-stack/install.sh | bash">
+<span class="prompt">$</span> curl -fsSL https://boringstackoverflow.github.io/boring-stack/install.sh | bash
+</pre>
+
+  <p>That clones the repo to <code>~/.boring-stack</code> and wires it into the tools that have a user-level config (Claude Code, Codex CLI). For tools that only support per-project rules, run this from inside any project where you want the boring stack defaults:</p>
+
+  <pre class="terminal" aria-label="project-level install"
+       data-copy="curl -fsSL https://boringstackoverflow.github.io/boring-stack/add.sh | bash">
+<span class="prompt">$</span> curl -fsSL https://boringstackoverflow.github.io/boring-stack/add.sh | bash
+</pre>
+
+  <p>Auto-detects your project's existing AI tool configs and drops the right file in each. Falls back to <code>AGENTS.md</code> (the portable convention) if nothing's set up yet.</p>
+
+  <details class="install-tools">
+    <summary>What gets written, per tool</summary>
+    <table class="tool-table">
+      <thead><tr><th>Tool</th><th>File written</th></tr></thead>
+      <tbody>
+        <tr><td>Claude Code</td><td><code>~/.claude/skills/boring-stack/SKILL.md</code> (user) or <code>.claude/skills/boring-stack/SKILL.md</code> (project)</td></tr>
+        <tr><td>Codex CLI (OpenAI)</td><td><code>~/.codex/instructions.md</code> (appended)</td></tr>
+        <tr><td>Cursor</td><td><code>.cursor/rules/boring-stack.mdc</code></td></tr>
+        <tr><td>GitHub Copilot</td><td><code>.github/copilot-instructions.md</code> (appended)</td></tr>
+        <tr><td>Cline</td><td><code>.clinerules</code></td></tr>
+        <tr><td>Continue.dev</td><td><code>.continuerules</code></td></tr>
+        <tr><td>Aider</td><td><code>CONVENTIONS.md</code> (appended)</td></tr>
+        <tr><td>Gemini Code Assist</td><td><code>GEMINI.md</code> (appended)</td></tr>
+        <tr><td>Windsurf</td><td><code>.windsurfrules</code></td></tr>
+        <tr><td>Zed</td><td><code>.rules</code></td></tr>
+        <tr><td>Anything else</td><td><code>AGENTS.md</code> (portable fallback)</td></tr>
+      </tbody>
+    </table>
+    <p class="tip">Force a specific tool: <code>… | bash -s -- --tool cursor</code>. Update later by re-running either install command — both are idempotent.</p>
+  </details>
+
+  <p class="tip">tip: the skill is MIT and stays MIT. Use it, fork it, ignore it, write a better one.</p>
+</section>
+
+<section>
+  <h2>What the skill argues for</h2>
+  <ul class="pushbacks">
+    <li>
+      <span class="reflex">Postgres</span>
+      <span><span class="pick">SQLite + WAL + Litestream</span><span class="why">10k+ writes/sec on a $5 VPS. Continuous backup to R2 for $0.50/mo. Migration to Postgres later is <code>pgloader</code> + a connection string.</span></span>
+    </li>
+    <li>
+      <span class="reflex">Vercel</span>
+      <span><span class="pick">Hetzner + Caddy</span><span class="why">$5/mo at every scale. Caddy auto-handles HTTPS via Let's Encrypt. No certbot, no cron, no nginx.</span></span>
+    </li>
+    <li>
+      <span class="reflex">Prisma / GORM</span>
+      <span><span class="pick">stdlib + sqlc</span><span class="why">Type-safe Go generated from <code>.sql</code> files. No runtime layer. Read your own queries.</span></span>
+    </li>
+    <li>
+      <span class="reflex">Docker / K8s</span>
+      <span><span class="pick">systemd + one binary</span><span class="why">Already on every Linux box. <code>Restart=on-failure</code> is one line. <code>journalctl</code> is your log aggregator.</span></span>
+    </li>
+    <li>
+      <span class="reflex">Microservices</span>
+      <span><span class="pick">Go monolith with internal packages</span><span class="why">Compiler-enforced module boundaries. Extract behind HTTP later when team and traffic actually demand it.</span></span>
+    </li>
+  </ul>
+</section>
+
+<section>
+  <h2>Stay on the list</h2>
+
+  <div class="signup primary">
+    <h3>Get monthly notes from the build</h3>
+    <p>About three emails per quarter — notes from the Borela build (install counts, what broke, what shipped, what I changed my mind about) and the heads-up when paid Borela ships, the babysitter for web apps running on the boring stack ($5/mo for backups, $9/mo for the full babysitter). The <a href="manifesto.html">manifesto</a> is on the site already; read it without signing up.</p>
+    <!--
+      action below is a Google Apps Script web-app URL that appends each
+      submission to a Google Sheet. Plain form POST, no auth, no CORS
+      preflight (form-encoded body, no fetch needed).
+    -->
+    <form id="signup-form"
+          action="https://script.google.com/macros/s/AKfycbyPv751VHqLe5MY1Ck_-xakkwE00VXpCuEGP6xuXk4WfFxvjZw835J8KuOMOl1--xfk-Q/exec"
+          method="post"
+          autocomplete="on"
+          target="_top">
+      <input type="hidden" name="list" value="boring-stack-manifesto">
+      <input type="email" name="email" required placeholder="you@vps.lan" aria-label="your email">
+      <button type="submit">Add me to the list</button>
+    </form>
+    <p class="signup-status" id="signup-status" hidden role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+<section>
+  <h2>Why this exists</h2>
+  <p>I'm building Borela. When it ships, Borela will be the babysitter for web apps running on the boring stack: it verifies your backups are actually restorable, drills the restore on a schedule, watches the agent heartbeat, and pages someone when the cron silently stops.</p>
+  <p><strong>Pre-launch.</strong> No customers yet, no paid signups open, no public site. I'm publishing this skill before paid Borela ships, on purpose. The skill is the funnel. If people install it and start running the boring stack on their side projects, some of those projects will grow up and need a babysitter. That's the bet.</p>
+  <p>This is not an original bet. <a href="https://levels.io">Pieter Levels</a> has been writing about this shape of stack for years. <a href="https://stevehanov.ca/blog/how-i-run-multiple-10k-mrr-companies-on-a-20month-tech-stack">Steve Hanov runs $40k MRR across four products on a $20/month stack</a>. DHH made a career out of refusing to add complexity that didn't earn its way in. I'm standing on shoulders.</p>
+  <p>What I want to add is the skill. Claude defaults to the modern hosted-everything pile (Next.js, Vercel, Supabase, fourteen npm packages) because that's what most of the training data looks like. The skill flips the default.</p>
+  <p>Install the skill and try it. If it argues with you in a way that doesn't fit your project, the archetype-fit table at the top of <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/SKILL.md">SKILL.md</a> tells you when to ignore it.</p>
+</section>
+
+<section>
+  <h2>Templates</h2>
+  <p>The configs the skill ships with. Each one is the actual file running Borela in production, lightly edited to use placeholder hostnames.</p>
+  <ul class="pushbacks">
+    <li><span class="pick"><a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/deploy.sh">deploy.sh</a></span><span class="why">10 lines. build, scp, restart, healthz.</span></li>
+    <li><span class="pick"><a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/Caddyfile">Caddyfile</a></span><span class="why">8 lines. Auto-HTTPS reverse proxy.</span></li>
+    <li><span class="pick"><a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/app.service">app.service</a></span><span class="why">22 lines. Hardened systemd unit with NoNewPrivileges, ProtectSystem=strict, ReadWritePaths scoped.</span></li>
+    <li><span class="pick"><a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/litestream.service">litestream.service</a></span><span class="why">15 lines. Continuous SQLite replication to R2.</span></li>
+    <li><span class="pick"><a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/litestream.yml">litestream.yml</a></span><span class="why">10 lines. R2 destination, env-var secrets.</span></li>
+  </ul>
+</section>
+
+<footer>
+  <span>boringstackoverflow / 2026 / MIT / <a href="mailto:boringstackoverflow@gmail.com">boringstackoverflow@gmail.com</a></span>
+  <span>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+    <a href="manifesto.html">manifesto</a>
+  </span>
+</footer>
+
+<script>
+// Copy button for any <pre class="terminal" data-copy="...">.
+// 18 lines of vanilla JS, no deps. Boring stack applied to its own marketing.
+document.querySelectorAll('pre.terminal[data-copy]').forEach(function(pre) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'copy-btn';
+  btn.textContent = 'copy';
+  btn.setAttribute('aria-label', 'copy command to clipboard');
+  btn.addEventListener('click', function() {
+    navigator.clipboard.writeText(pre.dataset.copy).then(function() {
+      btn.textContent = 'copied';
+      btn.dataset.state = 'copied';
+      setTimeout(function() { btn.textContent = 'copy'; delete btn.dataset.state; }, 1500);
+    }).catch(function() {
+      btn.textContent = 'failed';
+      setTimeout(function() { btn.textContent = 'copy'; }, 1500);
+    });
+  });
+  pre.appendChild(btn);
+});
+
+// Progressive enhancement for the signup form. With JS, we POST to the
+// Apps Script in the background and show inline status; without JS, the
+// browser follows the form's normal POST and lands on the script's HTML
+// response page. Either path captures the email.
+(function () {
+  var form = document.getElementById('signup-form');
+  var status = document.getElementById('signup-status');
+  if (!form || !status) return;
+  var action = form.getAttribute('action');
+  if (!action || action.indexOf('REPLACE_WITH_YOUR_DEPLOYMENT_ID') !== -1) return;
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var btn = form.querySelector('button[type=submit]');
+    var emailInput = form.querySelector('input[name=email]');
+    var prevLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'sending…';
+    status.hidden = true;
+
+    fetch(action, {
+      method: 'POST',
+      mode: 'no-cors',                  // Apps Script returns opaque; we trust 200
+      body: new URLSearchParams(new FormData(form)),
+    }).then(function () {
+      form.reset();
+      status.textContent = "You're on the list. I'll only email when I have something worth saying.";
+      status.hidden = false;
+    }).catch(function () {
+      status.textContent = "Couldn't reach the signup endpoint. Try again or email boringstackoverflow@gmail.com.";
+      status.hidden = false;
+    }).finally(function () {
+      btn.disabled = false;
+      btn.textContent = prevLabel;
+      if (emailInput) emailInput.blur();
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
