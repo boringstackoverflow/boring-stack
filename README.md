@@ -30,14 +30,14 @@ If any of these match your project, use a different stack. The skill will say so
 
 ## Live landing page
 
-[boringstackoverflow.github.io/boring-stack](https://boringstackoverflow.github.io/boring-stack/) — manifesto, install snippet, signup form. Hosted on GitHub Pages straight out of `docs/`. The signup form posts to a Google Apps Script that appends rows to a Google Sheet — no backend, no monthly bill.
+[boringstack.org](https://boringstack.org/) — manifesto, install snippet, signup form. Hosted on GitHub Pages straight out of `docs/`. The signup form posts to a Google Apps Script that appends rows to a Google Sheet — no backend, no monthly bill.
 
 ## Install
 
 One line. Works with every major AI coding tool.
 
 ```bash
-curl -fsSL https://boringstackoverflow.github.io/boring-stack/install.sh | bash
+curl -fsSL https://boringstack.org/install.sh | bash
 ```
 
 That clones the skill to `~/.boring-stack` and wires it into the tools that have a user-level config (Claude Code, Codex CLI). Idempotent — re-run any time to update.
@@ -46,7 +46,7 @@ For tools that only support project-level rules (Cursor, Copilot, Cline, Aider, 
 
 ```bash
 cd /path/to/your/project
-curl -fsSL https://boringstackoverflow.github.io/boring-stack/add.sh | bash
+curl -fsSL https://boringstack.org/add.sh | bash
 ```
 
 Auto-detects which tools the project uses and drops the right file in each. Falls back to `AGENTS.md` (the portable convention) if nothing's set up yet.
@@ -72,8 +72,8 @@ Auto-detects which tools the project uses and drops the right file in each. Fall
 If auto-detect picks the wrong thing (or you want to install for a tool whose config files don't exist yet):
 
 ```bash
-curl -fsSL https://boringstackoverflow.github.io/boring-stack/add.sh | bash -s -- --tool cursor
-curl -fsSL https://boringstackoverflow.github.io/boring-stack/add.sh | bash -s -- --tool all
+curl -fsSL https://boringstack.org/add.sh | bash -s -- --tool cursor
+curl -fsSL https://boringstack.org/add.sh | bash -s -- --tool all
 ```
 
 Recognized values: `claude`, `cursor`, `copilot`, `codex`, `aider`, `cline`, `continue`, `gemini`, `windsurf`, `zed`, `agents`, `all`.

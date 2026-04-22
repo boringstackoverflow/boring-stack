@@ -88,7 +88,7 @@ Quote it. Link it. Print it on a postcard. Argue with it. Fork it and
 write your own.
 
 The skill that operationalizes this manifesto:
-  https://boringstackoverflow.github.io/boring-stack/
+  https://boringstack.org/
 
 The repo:
   https://github.com/boringstackoverflow/boring-stack

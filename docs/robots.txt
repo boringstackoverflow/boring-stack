@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://boringstackoverflow.github.io/boring-stack/sitemap.xml
+Sitemap: https://boringstack.org/sitemap.xml

@@ -7,7 +7,7 @@
 # the boring-stack ruleset into the right place for each. Idempotent.
 #
 #   cd /path/to/your/project
-#   curl -fsSL https://boringstackoverflow.github.io/boring-stack/add.sh | bash
+#   curl -fsSL https://boringstack.org/add.sh | bash
 #
 # To force a specific tool (skip auto-detect):
 #   curl -fsSL https://...add.sh | bash -s -- --tool cursor

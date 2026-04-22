@@ -10,7 +10,7 @@
 #
 # Idempotent: re-runs cleanly to update.
 #
-#   curl -fsSL https://boringstackoverflow.github.io/boring-stack/install.sh | bash
+#   curl -fsSL https://boringstack.org/install.sh | bash
 #
 # To install into a different home:
 #   BORING_STACK_HOME=/opt/boring-stack curl -fsSL ... | bash
@@ -102,7 +102,7 @@ Most AI coding tools (Cursor, Copilot, Cline, Aider, Gemini, Windsurf,
 Continue, Zed) only support project-level rules. To add boring-stack
 defaults to a specific project, cd into it and run:
 
-    curl -fsSL https://boringstackoverflow.github.io/boring-stack/add.sh | bash
+    curl -fsSL https://boringstack.org/add.sh | bash
 
 The script auto-detects which tools the project uses and drops the right
 file in each. Falls back to AGENTS.md (the portable convention) if the
@@ -113,7 +113,7 @@ Updating
 
 Re-run this installer any time:
 
-    curl -fsSL https://boringstackoverflow.github.io/boring-stack/install.sh | bash
+    curl -fsSL https://boringstack.org/install.sh | bash
 
 Or pull manually:
 

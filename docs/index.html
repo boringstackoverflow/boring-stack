@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Boring Stack: Build web apps the boring way.</title>
 <meta name="description" content="An AI-coding skill (Claude Code, Cursor, Copilot, Codex, +7 more) plus reference templates for Go + SQLite + Litestream + Caddy + a $5 VPS.">
-<link rel="canonical" href="https://boringstackoverflow.github.io/boring-stack/">
+<link rel="canonical" href="https://boringstack.org/">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
 <meta property="og:title" content="Boring Stack: Build web apps the boring way.">
 <meta property="og:description" content="An AI-coding skill plus reference templates for Go + SQLite + Litestream + Caddy + a $5 VPS. Works with Claude Code, Cursor, Copilot, Codex, and more.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://boringstackoverflow.github.io/boring-stack/">
+<meta property="og:url" content="https://boringstack.org/">
 <meta property="og:site_name" content="Boring Stack">
-<meta property="og:image" content="https://boringstackoverflow.github.io/boring-stack/og-image.png">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Boring Stack: Build web apps the boring way. curl | bash works with Claude Code, Cursor, Copilot, Codex, Aider, and more.">
@@ -22,7 +22,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Boring Stack: Build web apps the boring way.">
 <meta name="twitter:description" content="An AI-coding skill plus reference templates for Go + SQLite + Litestream + Caddy + a $5 VPS.">
-<meta name="twitter:image" content="https://boringstackoverflow.github.io/boring-stack/og-image.png">
+<meta name="twitter:image" content="https://boringstack.org/og-image.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,11 +35,11 @@
   "@type": "SoftwareSourceCode",
   "name": "Boring Stack",
   "description": "An AI-coding skill plus reference templates for Go + SQLite + Litestream + Caddy + a $5 VPS. Works with Claude Code, Cursor, Copilot, Codex, Aider, Cline, Continue, Gemini, Windsurf, and Zed.",
-  "url": "https://boringstackoverflow.github.io/boring-stack/",
+  "url": "https://boringstack.org/",
   "codeRepository": "https://github.com/boringstackoverflow/boring-stack",
   "programmingLanguage": ["Go", "Shell"],
   "license": "https://github.com/boringstackoverflow/boring-stack/blob/main/LICENSE",
-  "image": "https://boringstackoverflow.github.io/boring-stack/og-image.png",
+  "image": "https://boringstack.org/og-image.png",
   "keywords": "claude-code, cursor, copilot, codex, ai-coding, sqlite, litestream, golang, caddy, systemd, devops, boring-stack"
 }
 </script>
@@ -62,10 +62,10 @@
 <span class="prompt">$</span> borela cost --last 30d
 hetzner cx22       <span class="num">$4.59</span>
 cloudflare r2      <span class="num">$0.12</span>
-borela.sh domain   <span class="num">$3.25</span>
+borela.dev domain  <span class="num">$1.25</span>
 resend (free tier) <span class="num">$0.00</span>
 ─────────────────────────
-<span class="total">total              $7.96/mo</span>
+<span class="total">total              $5.96/mo</span>
 </pre>
 
 <section>
@@ -83,15 +83,15 @@ resend (free tier) <span class="num">$0.00</span>
   <p>One line. Works with every major AI coding tool.</p>
 
   <pre class="terminal" aria-label="user-level install"
-       data-copy="curl -fsSL https://boringstackoverflow.github.io/boring-stack/install.sh | bash">
-<span class="prompt">$</span> curl -fsSL https://boringstackoverflow.github.io/boring-stack/install.sh | bash
+       data-copy="curl -fsSL https://boringstack.org/install.sh | bash">
+<span class="prompt">$</span> curl -fsSL https://boringstack.org/install.sh | bash
 </pre>
 
   <p>That clones the repo to <code>~/.boring-stack</code> and wires it into the tools that have a user-level config (Claude Code, Codex CLI). For tools that only support per-project rules, run this from inside any project where you want the boring stack defaults:</p>
 
   <pre class="terminal" aria-label="project-level install"
-       data-copy="curl -fsSL https://boringstackoverflow.github.io/boring-stack/add.sh | bash">
-<span class="prompt">$</span> curl -fsSL https://boringstackoverflow.github.io/boring-stack/add.sh | bash
+       data-copy="curl -fsSL https://boringstack.org/add.sh | bash">
+<span class="prompt">$</span> curl -fsSL https://boringstack.org/add.sh | bash
 </pre>
 
   <p>Auto-detects your project's existing AI tool configs and drops the right file in each. Falls back to <code>AGENTS.md</code> (the portable convention) if nothing's set up yet.</p>
