@@ -101,7 +101,7 @@ MIT. See `LICENSE`.
 
 ## Why this exists
 
-Borela is being built as a babysitter for web apps running on the boring stack. When it ships, it'll verify your backups are restorable, drill the restore on a schedule, watch the agent heartbeat, and page someone when the cron silently dies. Planned pricing is $5/mo for backup verification, $9/mo for the full babysitter. **Pre-launch — no customers yet, no signups open, no public site.** This OSS skill is the funnel that ships first.
+Borela is being built as a babysitter for web apps running on the boring stack. When it ships, it'll verify your backups are restorable, drill the restore on a schedule, watch the agent heartbeat, and page someone when the cron silently dies. Planned pricing is $5/mo for backup verification, $9/mo for the full babysitter. **Pre-launch — no customers yet, no signups open, no public site.** This OSS skill ships first.
 
 If you install the skill and start running the boring stack on your side projects, some of those projects will grow up and need a babysitter. That's the bet.
 
