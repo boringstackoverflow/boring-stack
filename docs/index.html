@@ -85,6 +85,30 @@ resend (free tier) <span class="num">$0.00</span>
   <p>The repo gives agents better defaults. The newsletter keeps those defaults honest by showing how they hold up in real products, starting with Borela and expanding to projects from the community.</p>
 </section>
 
+<section id="newsletter">
+  <h2>Join the movement</h2>
+
+  <div class="signup primary">
+    <h3>Get Boring Stack Weekly</h3>
+    <p>One practical email each week on how to build with Boring Stack: what shipped, what broke, how the bill changed, which agent defaults improved, and what the latest restore drill taught. Borela is live; the newsletter is where the build stays public.</p>
+    <!--
+      action below is a Google Apps Script web-app URL that appends each
+      submission to a Google Sheet. Plain form POST, no auth, no CORS
+      preflight (form-encoded body, no fetch needed).
+    -->
+    <form id="signup-form"
+          action="https://script.google.com/macros/s/AKfycbyPv751VHqLe5MY1Ck_-xakkwE00VXpCuEGP6xuXk4WfFxvjZw835J8KuOMOl1--xfk-Q/exec"
+          method="post"
+          autocomplete="on"
+          target="_top">
+      <input type="hidden" name="list" value="boring-stack-weekly">
+      <input type="email" name="email" required placeholder="you@vps.lan" aria-label="your email">
+      <button type="submit">Join the movement</button>
+    </form>
+    <p class="signup-status" id="signup-status" hidden role="status" aria-live="polite"></p>
+  </div>
+</section>
+
 <section>
   <h2>Install</h2>
 
@@ -152,30 +176,6 @@ resend (free tier) <span class="num">$0.00</span>
       <span><span class="pick">Go monolith with internal packages</span><span class="why">Compiler-enforced module boundaries. Extract behind HTTP later when team and traffic actually demand it.</span></span>
     </li>
   </ul>
-</section>
-
-<section id="newsletter">
-  <h2>Join the movement</h2>
-
-  <div class="signup primary">
-    <h3>Get Boring Stack Weekly</h3>
-    <p>One practical email each week on how to build with Boring Stack: what shipped, what broke, how the bill changed, which agent defaults improved, and what the latest restore drill taught. Borela is live; the newsletter is where the build stays public.</p>
-    <!--
-      action below is a Google Apps Script web-app URL that appends each
-      submission to a Google Sheet. Plain form POST, no auth, no CORS
-      preflight (form-encoded body, no fetch needed).
-    -->
-    <form id="signup-form"
-          action="https://script.google.com/macros/s/AKfycbyPv751VHqLe5MY1Ck_-xakkwE00VXpCuEGP6xuXk4WfFxvjZw835J8KuOMOl1--xfk-Q/exec"
-          method="post"
-          autocomplete="on"
-          target="_top">
-      <input type="hidden" name="list" value="boring-stack-weekly">
-      <input type="email" name="email" required placeholder="you@vps.lan" aria-label="your email">
-      <button type="submit">Join the movement</button>
-    </form>
-    <p class="signup-status" id="signup-status" hidden role="status" aria-live="polite"></p>
-  </div>
 </section>
 
 <section>
