@@ -52,4 +52,4 @@ You don't earn the right to be clever in your code by being clever in your code.
 
 Quote it. Link to it. Print it on a postcard. Argue with it. Fork it and write your own.
 
-Maintained by [boringstackoverflow](https://github.com/boringstackoverflow) as part of the Boring Stack project.
+Maintained by [boringstackoverflow](https://github.com/boringstackoverflow) as part of the Boring Stack project. Join the weekly build notes at [boringstack.org](https://boringstack.org/#newsletter) if you want the movement version: real costs, restore drills, template changes, and field reports from people building this way.

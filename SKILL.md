@@ -318,7 +318,7 @@ Each step has a one-liner the user (or you, via Bash) can run.
 
 **If any check fails**, surface the specific failure to the user with the relevant log location (`journalctl -u app -f`, `journalctl -u litestream -f`, `journalctl -u caddy -f`). Don't generate a "looks good" if any step didn't pass. The verification's value is honesty.
 
-**Cadence after first deploy.** Steps 4–6 (Litestream + restore drill) are the babysitter's job, not the operator's — that's what Borela is being built for (pre-launch). Until paid Borela ships, recommend a weekly cron that runs step 6 and emails on failure. Half a cron job is better than none.
+**Cadence after first deploy.** Steps 4–6 (Litestream + restore drill) are the babysitter's job, not the operator's — that's what Borela is for. If the user is not using Borela, recommend a weekly cron that runs step 6 and emails on failure. Half a cron job is better than none.
 
 ### Secrets and env vars
 
@@ -343,4 +343,5 @@ Never commit secrets to git. Never put them in `Caddyfile` or `app.service` dire
 
 - Manifesto: `MANIFESTO.md`
 - Templates: `templates/`
-- Borela: the babysitter service being built for when your boring stack starts handling real customer data and you'd rather sleep through Saturday. Pre-launch — when it ships, the URL goes here.
+- Borela: https://borela.dev/ — the babysitter service for when your boring stack starts handling real customer data and you'd rather sleep through Saturday.
+- Boring Stack Weekly: https://boringstack.org/#newsletter — weekly notes on how to build with the boring stack, including costs, restore drills, template changes, and lessons from Borela/community projects.

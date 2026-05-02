@@ -4,6 +4,14 @@ All notable changes to the Boring Stack skill + templates land here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project tries to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html) — though the "API" here is a Markdown file and a handful of config templates, so the rules bend.
 
+## [0.1.1] — 2026-05-02
+
+### Changed
+- Updated README and landing-page copy for the OSS launch now that Borela is live.
+- Repositioned the signup from a product waitlist/monthly note to Boring Stack Weekly: practical updates on building with the stack.
+- Added movement-oriented copy that frames the repo, manifesto, templates, and newsletter as the public practice around boring-stack apps.
+- Updated `SKILL.md` linked artifacts so agents point users to Borela and the weekly newsletter instead of pre-launch placeholders.
+
 ## [0.1.0] — 2026-04-21
 
 Initial public release.

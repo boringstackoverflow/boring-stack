@@ -1,16 +1,17 @@
 # Boring Stack
 
-A Claude Code skill plus reference templates for building web apps the boring way.
+An AI coding skill, reference templates, and a builder movement for making web apps the boring way.
 
-I'm building Borela — a babysitter service for web apps running on the boring stack (pre-launch, no customers yet, no public site). Its full cloud control plane (marketing, magic-link auth, dashboard, locked v1 protocol, dev mailer) runs for under $8 a month: one Go binary, one SQLite file, Litestream replicating to Cloudflare R2, Caddy fronting it, systemd running it, a $5 Hetzner VPS hosting it.
+[Borela](https://borela.dev/) is live: a babysitter service for web apps running on the boring stack. Its full cloud control plane (marketing, magic-link auth, dashboard, locked v1 protocol, dev mailer) runs for under $8 a month: one Go binary, one SQLite file, Litestream replicating to Cloudflare R2, Caddy fronting it, systemd running it, a $5 Hetzner VPS hosting it.
 
-This repo is the part that makes Claude do the same by default.
+This repo is the open-source part that makes AI coding tools do the same by default. The project is also becoming a public record of how to build this way: weekly notes, real costs, restore drills, launch lessons, and the trade-offs behind every boring choice.
 
 ## What's in the box
 
-- **`/boring-stack`**: a Claude Code skill that argues for the boring stack when you start a side project. Pushes back on Postgres, Vercel, ORMs, Docker, Kubernetes, microservices when they don't fit. Two sentences plus a question per pushback. Always defers to your call.
+- **`/boring-stack`**: an AI coding skill that argues for the boring stack when you start a side project. Pushes back on Postgres, Vercel, ORMs, Docker, Kubernetes, microservices when they don't fit. Two sentences plus a question per pushback. Always defers to your call.
 - **`templates/`**: battle-tested reference configs from the Borela production stack. `deploy.sh` (10 lines), `Caddyfile` (8 lines), `app.service` (hardened systemd unit), `litestream.service`, `litestream.yml`. Drop them in, replace the hostnames, ship.
 - **`MANIFESTO.md`**: seven principles. Quote them, link them, fork them.
+- **The newsletter**: weekly field notes on building with Boring Stack: what shipped, what broke, what the bill says, which defaults held up, and which ones need to be sharpened.
 
 ## Who this is for
 
@@ -28,9 +29,11 @@ If any of these match your project, use a different stack. The skill will say so
 
 `SKILL.md` has the full "this is not for you if" section.
 
-## Live landing page
+## Live landing page and newsletter
 
-[boringstack.org](https://boringstack.org/) — manifesto, install snippet, signup form. Hosted on GitHub Pages straight out of `docs/`. The signup form posts to a Google Apps Script that appends rows to a Google Sheet — no backend, no monthly bill.
+[boringstack.org](https://boringstack.org/) — manifesto, install snippet, newsletter signup, and OSS launch page. Hosted on GitHub Pages straight out of `docs/`. The signup form posts to a Google Apps Script that appends rows to a Google Sheet — no backend, no monthly bill.
+
+The newsletter is weekly and practical: one build log, one decision, one operational lesson. It is for people using Boring Stack on side projects, indie products, internal tools, and small web apps that should stay legible.
 
 ## Install
 
@@ -101,17 +104,19 @@ MIT. See `LICENSE`.
 
 ## Why this exists
 
-Borela is being built as a babysitter for web apps running on the boring stack. When it ships, it'll verify your backups are restorable, drill the restore on a schedule, watch the agent heartbeat, and page someone when the cron silently dies. Planned pricing is $5/mo for backup verification, $9/mo for the full babysitter. **Pre-launch — no customers yet, no signups open, no public site.** This OSS skill ships first.
+[Borela](https://borela.dev/) has launched. It is the babysitter for web apps running on the boring stack: it verifies your backups are restorable, drills the restore on a schedule, watches the agent heartbeat, and pages someone when the cron silently dies.
 
-If you install the skill and start running the boring stack on your side projects, some of those projects will grow up and need a babysitter. That's the bet.
+This OSS project is the public layer around that bet. Borela proves the stack in production; Boring Stack gives builders the skill, templates, and defaults to build the same way before they need a babysitter.
 
-The skill is MIT and stays MIT no matter what happens to paid Borela. Use it, fork it, ignore it, write a better one.
+The newsletter is the movement loop: weekly notes on what shipped, what broke, what the bill says, what the restore drill found, and which boring defaults held up in real apps. Some projects will grow into Borela customers. Others will only need the principles, templates, and receipts. Both outcomes make the movement stronger.
+
+The skill is MIT and stays MIT no matter what happens to commercial Borela. Use it, fork it, ignore it, write a better one.
 
 ## Contributing
 
 Issues and PRs welcome. The bar for new pushback rules is high: each one needs a real trade-off with numbers, a real migration path, and an honest "want it anyway?" closer. The skill loses credibility if it pushes the boring stack at projects that don't fit, so the "When NOT to use this skill" section in `SKILL.md` is load-bearing too.
 
-If you've got a war story (boring stack saved you, boring stack failed you, you migrated off and here's why), open an issue. The monthly notes from the build pull from those.
+If you've got a war story (boring stack saved you, boring stack failed you, you migrated off and here's why), open an issue. The weekly newsletter pulls from those reports, the Borela build, and real projects using the stack.
 
 ## Maintained by
 

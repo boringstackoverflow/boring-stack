@@ -27,13 +27,13 @@
 
   <!-- subhead -->
   <text x="80" y="350" font-size="24" class="sub">Go + SQLite + Litestream + Caddy + systemd + a $5 VPS.</text>
-  <text x="80" y="384" font-size="24" class="sub">A Claude Code skill that argues with the modern reflex.</text>
+  <text x="80" y="384" font-size="24" class="sub">OSS skill + templates + weekly build notes.</text>
 
   <!-- divider -->
   <text x="80" y="430" font-size="20" class="line">─────────────────────────────────────────</text>
 
   <!-- badge + tools -->
-  <rect class="badge" x="80" y="450" width="170" height="40" rx="4"/>
-  <text x="92" y="478" font-size="20" class="badge-text">curl | bash</text>
-  <text x="270" y="478" font-size="19" class="sub">Claude Code · Cursor · Copilot · Codex · Aider · +6 more</text>
+  <rect class="badge" x="80" y="450" width="210" height="40" rx="4"/>
+  <text x="92" y="478" font-size="20" class="badge-text">join the movement</text>
+  <text x="310" y="478" font-size="19" class="sub">Claude Code · Cursor · Copilot · Codex · Aider · +6 more</text>
 </svg>

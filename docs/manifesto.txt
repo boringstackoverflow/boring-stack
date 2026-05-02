@@ -93,7 +93,11 @@ The skill that operationalizes this manifesto:
 The repo:
   https://github.com/boringstackoverflow/boring-stack
 
-Thanks for being on the list. Monthly notes from the build coming next.
+Join the movement:
+  https://boringstack.org/#newsletter
+
+Weekly notes from the build: costs, restore drills, template changes, and
+field reports from people building with the boring stack.
 
 — boringstackoverflow
 
