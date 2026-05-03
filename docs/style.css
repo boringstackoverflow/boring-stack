@@ -4,6 +4,7 @@
   --font-display: "Inter Tight", "Söhne", system-ui, sans-serif;
   --font-body: -apple-system, "Helvetica Neue", sans-serif;
   --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+  --content-max: 720px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -17,9 +18,8 @@ html, body {
   font-size: 17px; line-height: 1.5;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
-body { padding: 24px; max-width: 720px; margin: 0 auto 0 24px; }
-@media (min-width: 768px) { body { padding: 40px; margin: 0 auto 0 64px; } }
-@media (min-width: 1024px) { body { margin: 0 auto 0 96px; } }
+body { padding: 24px; max-width: 960px; margin: 0 auto; }
+@media (min-width: 768px) { body { padding: 40px; } }
 ::selection { background: var(--fg); color: var(--bg); }
 
 nav.topbar {
@@ -39,18 +39,20 @@ nav.topbar .links a:hover { color: var(--accent); text-decoration: underline; }
 h1.hero {
   font-family: var(--font-display); font-weight: 700;
   font-size: clamp(40px, 8vw, 64px); line-height: 1.1; letter-spacing: -0.02em;
-  margin-bottom: 24px;
+  max-width: var(--content-max); margin: 0 auto 24px;
 }
 h1.hero .dot { color: var(--accent); }
 p.subhead {
   font-family: var(--font-display); font-weight: 400; font-size: 24px;
-  line-height: 1.3; color: var(--fg-muted); margin-bottom: 48px;
+  line-height: 1.3; color: var(--fg-muted);
+  max-width: var(--content-max); margin: 0 auto 48px;
 }
 
 pre.terminal {
   font-family: var(--font-mono); font-size: 15px; line-height: 1.6;
   background: var(--fg); color: var(--bg); padding: 24px; border-radius: 4px;
-  overflow-x: auto; margin-bottom: 64px; white-space: pre;
+  overflow-x: auto; margin: 0 auto 64px; white-space: pre;
+  max-width: var(--content-max);
   position: relative;
 }
 pre.terminal .prompt { color: var(--fg-muted); user-select: none; }
@@ -85,8 +87,8 @@ h3 {
   font-family: var(--font-display); font-weight: 700; font-size: 22px;
   line-height: 1.3; margin-bottom: 12px; margin-top: 32px;
 }
-section { margin-bottom: 80px; }
-section p { margin-bottom: 16px; max-width: 640px; }
+section { max-width: var(--content-max); margin: 0 auto 80px; }
+section p { margin-bottom: 16px; }
 section a {
   color: var(--fg); text-decoration: underline;
   text-decoration-color: var(--rule); text-underline-offset: 3px;
@@ -96,7 +98,7 @@ section a:hover { color: var(--accent); text-decoration-color: var(--accent); }
 ol.steps { list-style: none; counter-reset: step; }
 ol.steps li {
   counter-increment: step; position: relative; padding-left: 40px;
-  margin-bottom: 24px; max-width: 640px;
+  margin-bottom: 24px;
 }
 ol.steps li::before {
   content: counter(step) ".";
@@ -105,7 +107,7 @@ ol.steps li::before {
 }
 ol.steps strong { font-weight: 500; }
 
-ul.pushbacks { list-style: none; max-width: 640px; }
+ul.pushbacks { list-style: none; }
 ul.pushbacks li {
   padding: 16px 0; border-top: 1px solid var(--rule);
   display: grid; grid-template-columns: 200px 1fr; gap: 16px; align-items: baseline;
@@ -123,7 +125,7 @@ ul.pushbacks .why { display: block; color: var(--fg-muted); font-size: 15px; mar
 
 .signup {
   border: 1px solid var(--rule); border-radius: 4px;
-  padding: 24px; margin-bottom: 24px; max-width: 640px;
+  padding: 24px; margin-bottom: 24px;
 }
 .signup h3 { margin-top: 0; margin-bottom: 8px; }
 .signup p { color: var(--fg-muted); font-size: 15px; margin-bottom: 16px; }
@@ -158,7 +160,7 @@ ul.pushbacks .why { display: block; color: var(--fg-muted); font-size: 15px; mar
 .tool-table th { color: var(--fg-muted); font-weight: 500; }
 .tool-table code { font-size: 13px; }
 
-.principles { list-style: none; }
+.principles { list-style: none; max-width: var(--content-max); margin: 0 auto; }
 .principles li {
   padding: 32px 0; border-top: 1px solid var(--rule);
   scroll-margin-top: 24px;
@@ -180,7 +182,7 @@ ul.pushbacks .why { display: block; color: var(--fg-muted); font-size: 15px; mar
 .tip {
   font-family: var(--font-mono); font-size: 13px; color: var(--fg-muted);
   border-left: 2px solid var(--rule); padding: 8px 0 8px 16px;
-  margin-bottom: 24px; max-width: 640px;
+  margin-bottom: 24px;
 }
 
 footer {
@@ -195,7 +197,7 @@ footer a:hover { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
 /* Issue page + archive */
-article.issue { margin-top: 32px; max-width: 640px; font-size: 17px; line-height: 1.7; }
+article.issue { margin: 32px auto 0; max-width: var(--content-max); font-size: 17px; line-height: 1.7; }
 article.issue h1 { margin-top: 8px; margin-bottom: 12px; font-family: var(--font-display); font-weight: 700; font-size: 36px; line-height: 1.2; letter-spacing: -0.01em; }
 article.issue h2 { margin-top: 56px; margin-bottom: 12px; font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1.3; letter-spacing: -0.005em; }
 article.issue h3 { margin-top: 36px; margin-bottom: 10px; font-family: var(--font-display); font-weight: 700; font-size: 19px; line-height: 1.3; }
