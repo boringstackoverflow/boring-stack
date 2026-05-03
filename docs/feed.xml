@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Boring Stack Weekly</title>
+    <link>https://boringstack.org/issues/</link>
+    <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
+    <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 03 May 2026 01:28:39 +0000</lastBuildDate>
+    
+    <item>
+      <title>Restore drill #1: when the WAL bites</title>
+      <link>https://boringstack.org/issues/2026-05-09-restore-drill.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/2026-05-09-restore-drill.html</guid>
+      <pubDate>Sat, 09 May 2026 00:00:00 +0000</pubDate>
+      <description>Borela's first scheduled restore drill found a 1.2-second data loss window. One Litestream config line closed it.</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -50,6 +50,7 @@
   <span class="nameplate"><a href="./">boring-stack</a></span>
   <span class="links">
     <a href="manifesto.html">manifesto</a>
+    <a href="issues/">issues</a>
     <a href="#newsletter">newsletter</a>
     <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
   </span>
@@ -83,6 +84,32 @@ resend (free tier) <span class="num">$0.00</span>
   <h2>The movement</h2>
   <p>Boring Stack is for builders who would rather ship a small, understandable system than rent a distributed platform before the product earns it. The movement is the public practice: publish the defaults, publish the costs, publish the failures, and make the simple path easier to choose next time.</p>
   <p>The repo gives agents better defaults. The newsletter keeps those defaults honest by showing how they hold up in real products, starting with Borela and expanding to projects from the community.</p>
+</section>
+
+<section id="newsletter">
+  <h2>Join the movement</h2>
+
+  <div class="signup primary">
+    <h3>Get Boring Stack Weekly</h3>
+    <p>One practical email each week on how to build with Boring Stack: what shipped, what broke, how the bill changed, which agent defaults improved, and what the latest restore drill taught. Borela is live; the newsletter is where the build stays public.</p>
+    <!--
+      action below is the boring-stack-backend (BSB) signup endpoint at
+      api.boringstack.org. Plain form POST, no preflight (form-encoded body,
+      no custom headers). BSB sends a confirmation email; the subscriber is
+      not on the list until they click the link. Without JS, the browser
+      follows the POST and lands on BSB's "Check your inbox" HTML page.
+    -->
+    <form id="signup-form"
+          action="https://api.boringstack.org/v1/newsletter/subscribe"
+          method="post"
+          autocomplete="on"
+          target="_top">
+      <input type="hidden" name="list" value="boring-stack-weekly">
+      <input type="email" name="email" required placeholder="you@vps.lan" aria-label="your email">
+      <button type="submit">Join the movement</button>
+    </form>
+    <p class="signup-status" id="signup-status" hidden role="status" aria-live="polite"></p>
+  </div>
 </section>
 
 <section>
@@ -154,30 +181,6 @@ resend (free tier) <span class="num">$0.00</span>
   </ul>
 </section>
 
-<section id="newsletter">
-  <h2>Join the movement</h2>
-
-  <div class="signup primary">
-    <h3>Get Boring Stack Weekly</h3>
-    <p>One practical email each week on how to build with Boring Stack: what shipped, what broke, how the bill changed, which agent defaults improved, and what the latest restore drill taught. Borela is live; the newsletter is where the build stays public.</p>
-    <!--
-      action below is a Google Apps Script web-app URL that appends each
-      submission to a Google Sheet. Plain form POST, no auth, no CORS
-      preflight (form-encoded body, no fetch needed).
-    -->
-    <form id="signup-form"
-          action="https://script.google.com/macros/s/AKfycbyPv751VHqLe5MY1Ck_-xakkwE00VXpCuEGP6xuXk4WfFxvjZw835J8KuOMOl1--xfk-Q/exec"
-          method="post"
-          autocomplete="on"
-          target="_top">
-      <input type="hidden" name="list" value="boring-stack-weekly">
-      <input type="email" name="email" required placeholder="you@vps.lan" aria-label="your email">
-      <button type="submit">Join the movement</button>
-    </form>
-    <p class="signup-status" id="signup-status" hidden role="status" aria-live="polite"></p>
-  </div>
-</section>
-
 <section>
   <h2>Why this exists</h2>
   <p><a href="https://borela.dev/">Borela</a> has launched. It is the babysitter for web apps running on the boring stack: it verifies your backups are actually restorable, drills the restore on a schedule, watches the agent heartbeat, and pages someone when the cron silently stops.</p>
@@ -231,16 +234,16 @@ document.querySelectorAll('pre.terminal[data-copy]').forEach(function(pre) {
   pre.appendChild(btn);
 });
 
-// Progressive enhancement for the signup form. With JS, we POST to the
-// Apps Script in the background and show inline status; without JS, the
-// browser follows the form's normal POST and lands on the script's HTML
-// response page. Either path captures the email.
+// Progressive enhancement for the signup form. With JS, we POST to BSB in
+// the background and show inline status; without JS, the browser follows
+// the form's normal POST and lands on BSB's "Check your inbox" HTML page.
+// Either path captures the email + triggers the confirmation send.
 (function () {
   var form = document.getElementById('signup-form');
   var status = document.getElementById('signup-status');
   if (!form || !status) return;
   var action = form.getAttribute('action');
-  if (!action || action.indexOf('REPLACE_WITH_YOUR_DEPLOYMENT_ID') !== -1) return;
+  if (!action) return;
 
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
@@ -253,11 +256,11 @@ document.querySelectorAll('pre.terminal[data-copy]').forEach(function(pre) {
 
     fetch(action, {
       method: 'POST',
-      mode: 'no-cors',                  // Apps Script returns opaque; we trust 200
+      mode: 'no-cors',                  // BSB returns HTML; we trust 200
       body: new URLSearchParams(new FormData(form)),
     }).then(function () {
       form.reset();
-      status.textContent = "You're on the list. Weekly notes start with the next build update.";
+      status.textContent = "Check your inbox — we just sent a confirmation link. Click it to finish subscribing.";
       status.hidden = false;
     }).catch(function () {
       status.textContent = "Couldn't reach the signup endpoint. Try again or email boringstackoverflow@gmail.com.";
