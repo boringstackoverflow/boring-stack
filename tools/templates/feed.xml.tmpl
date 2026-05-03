@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Boring Stack Weekly</title>
+    <link>https://boringstack.org/issues/</link>
+    <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
+    <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
+    <language>en-us</language>
+    <lastBuildDate>{{.BuildDate}}</lastBuildDate>
+    {{range .Issues}}
+    <item>
+      <title>{{.Title}}</title>
+      <link>https://boringstack.org/issues/{{.Slug}}.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/{{.Slug}}.html</guid>
+      <pubDate>{{.PubDate}}</pubDate>
+      {{if .Summary}}<description>{{.Summary}}</description>{{end}}
+    </item>
+    {{end}}
+  </channel>
+</rss>

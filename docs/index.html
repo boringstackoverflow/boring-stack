@@ -50,6 +50,7 @@
   <span class="nameplate"><a href="./">boring-stack</a></span>
   <span class="links">
     <a href="manifesto.html">manifesto</a>
+    <a href="issues/">issues</a>
     <a href="#newsletter">newsletter</a>
     <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
   </span>
@@ -92,12 +93,14 @@ resend (free tier) <span class="num">$0.00</span>
     <h3>Get Boring Stack Weekly</h3>
     <p>One practical email each week on how to build with Boring Stack: what shipped, what broke, how the bill changed, which agent defaults improved, and what the latest restore drill taught. Borela is live; the newsletter is where the build stays public.</p>
     <!--
-      action below is a Google Apps Script web-app URL that appends each
-      submission to a Google Sheet. Plain form POST, no auth, no CORS
-      preflight (form-encoded body, no fetch needed).
+      action below is the boring-stack-backend (BSB) signup endpoint at
+      api.boringstack.org. Plain form POST, no preflight (form-encoded body,
+      no custom headers). BSB sends a confirmation email; the subscriber is
+      not on the list until they click the link. Without JS, the browser
+      follows the POST and lands on BSB's "Check your inbox" HTML page.
     -->
     <form id="signup-form"
-          action="https://script.google.com/macros/s/AKfycbyPv751VHqLe5MY1Ck_-xakkwE00VXpCuEGP6xuXk4WfFxvjZw835J8KuOMOl1--xfk-Q/exec"
+          action="https://api.boringstack.org/v1/newsletter/subscribe"
           method="post"
           autocomplete="on"
           target="_top">
@@ -231,16 +234,16 @@ document.querySelectorAll('pre.terminal[data-copy]').forEach(function(pre) {
   pre.appendChild(btn);
 });
 
-// Progressive enhancement for the signup form. With JS, we POST to the
-// Apps Script in the background and show inline status; without JS, the
-// browser follows the form's normal POST and lands on the script's HTML
-// response page. Either path captures the email.
+// Progressive enhancement for the signup form. With JS, we POST to BSB in
+// the background and show inline status; without JS, the browser follows
+// the form's normal POST and lands on BSB's "Check your inbox" HTML page.
+// Either path captures the email + triggers the confirmation send.
 (function () {
   var form = document.getElementById('signup-form');
   var status = document.getElementById('signup-status');
   if (!form || !status) return;
   var action = form.getAttribute('action');
-  if (!action || action.indexOf('REPLACE_WITH_YOUR_DEPLOYMENT_ID') !== -1) return;
+  if (!action) return;
 
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
@@ -253,11 +256,11 @@ document.querySelectorAll('pre.terminal[data-copy]').forEach(function(pre) {
 
     fetch(action, {
       method: 'POST',
-      mode: 'no-cors',                  // Apps Script returns opaque; we trust 200
+      mode: 'no-cors',                  // BSB returns HTML; we trust 200
       body: new URLSearchParams(new FormData(form)),
     }).then(function () {
       form.reset();
-      status.textContent = "You're on the list. Weekly notes start with the next build update.";
+      status.textContent = "Check your inbox — we just sent a confirmation link. Click it to finish subscribing.";
       status.hidden = false;
     }).catch(function () {
       status.textContent = "Couldn't reach the signup endpoint. Try again or email boringstackoverflow@gmail.com.";

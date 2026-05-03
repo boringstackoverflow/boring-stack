@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restore drill #1: when the WAL bites — Boring Stack</title>
+<meta name="description" content="Borela&#39;s first scheduled restore drill found a 1.2-second data loss window. One Litestream config line closed it.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-05-09-restore-drill.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Restore drill #1: when the WAL bites">
+<meta property="og:description" content="Borela&#39;s first scheduled restore drill found a 1.2-second data loss window. One Litestream config line closed it.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-05-09-restore-drill.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-05-09">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../">boring-stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="./">issues</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">May 9, 2026 · issue #1</p>
+  <h1>Restore drill #1: when the WAL bites</h1>
+  <p>Borela&rsquo;s first scheduled restore drill ran on Friday at 02:00 UTC.
+The SQLite WAL had 14 unflushed frames at restore time, and Litestream&rsquo;s
+checkpoint loop hadn&rsquo;t fired yet — so the restored DB was missing the
+last 1.2 seconds of writes.</p>
+<p>The fix was a one-line config tweak: <code>max-checkpoint-page-count: 100</code>,
+down from the default 1000. Trades a tiny throughput hit for a tighter
+recovery window.</p>
+<h2 id="numbers-from-the-actual-drill">Numbers from the actual drill</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Restore time</td>
+<td>4.7s for 12 MB</td>
+</tr>
+<tr>
+<td>Frames replayed</td>
+<td>14</td>
+</tr>
+<tr>
+<td>Loss window before fix</td>
+<td>~1.2s</td>
+</tr>
+<tr>
+<td>Loss window after fix</td>
+<td>0 frames at p99</td>
+</tr>
+</tbody>
+</table>
+<h2 id="what-the-skill-argued-for-and-what-we-actually-shipped">What the skill argued for, and what we actually shipped</h2>
+<p>The boring-stack skill says &ldquo;SQLite + WAL + Litestream is the default.&rdquo;
+That&rsquo;s still true. What this drill showed is that the <em>defaults</em> matter:
+out of the box, Litestream replicates with checkpoints sized for
+throughput, not for recovery point objective. If you care about RPO
+(most apps don&rsquo;t, until the drill), the page-count knob is the lever.</p>
+<p>For the curious, the diff is in the
+<a href="https://github.com/boringstackoverflow/borela-infra">Borela config repo</a>
+under <code>litestream.yml</code>.</p>
+<h2 id="next-week">Next week</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Restore drill #2 with simulated agent crash mid-write</li>
+<li><input disabled="" type="checkbox"> First customer install (Borela has a real beta user now — more soon)</li>
+<li><input disabled="" type="checkbox"> Skill change: tighter pushback wording when projects ask for &ldquo;Postgres for vector search&rdquo; and only need an FTS5 index</li>
+</ul>
+<p>If you&rsquo;ve run a restore drill on your own boring-stack project, reply with
+your numbers — I&rsquo;d like to publish a comparison next month.</p>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span>boringstackoverflow / 2026 / MIT / <a href="mailto:boringstackoverflow@gmail.com">boringstackoverflow@gmail.com</a></span>
+</footer>
+
+</body>
+</html>
