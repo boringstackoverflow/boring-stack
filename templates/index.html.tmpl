@@ -1,0 +1,36 @@
+<!--
+  Minimal Go html/template starter for the boring stack.
+  Loads /static/app.css and htmx from a pinned CDN URL.
+  Cache-busted via the Version field passed from main.go (set from -ldflags).
+  Edit freely — this is a starting point, not a UI kit.
+
+  htmx loaded from unpkg pinned to v2.0.4. To self-host instead, download
+  https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js to static/htmx.min.js
+  and point the script tag at /static/htmx.min.js?v=<Version>.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App</title>
+<link rel="stylesheet" href="/static/app.css?v={{ .Version }}">
+<script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
+</head>
+<body>
+
+<header>
+  <h1>It works.</h1>
+  <p class="muted">Server-rendered HTML, htmx loaded, version <code>{{ .Version }}</code>.</p>
+</header>
+
+<main>
+  <p>This page came from <code>templates/index.html.tmpl</code>, rendered by Go's <code>html/template</code> and served from <code>main.go</code>. Static assets live in <code>static/</code> and are embedded into the binary via <code>embed.FS</code>.</p>
+
+  <p>Try an htmx swap:</p>
+  <button hx-get="/healthz" hx-target="#out" hx-swap="innerHTML">ping /healthz</button>
+  <pre id="out" class="muted">click the button</pre>
+</main>
+
+</body>
+</html>

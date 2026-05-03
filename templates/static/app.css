@@ -1,0 +1,57 @@
+/*
+  Starter stylesheet for the boring stack.
+  ~50 lines, modern CSS, no framework.
+  Edit freely — these are sensible defaults, not a design system.
+*/
+
+:root {
+  --bg: #fafaf8;
+  --fg: #0a0a0a;
+  --muted: #6b6b66;
+  --rule: #e8e6df;
+  --accent: #c84e1a;
+  --radius: 4px;
+  --space: 16px;
+  --max-width: 720px;
+  --font-body: -apple-system, "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #111110; --fg: #f0eee6; --muted: #8a8a82; --rule: #2a2926; --accent: #e26534; }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.6;
+  padding: calc(var(--space) * 2);
+  max-width: var(--max-width); margin: 0 auto;
+}
+
+h1, h2, h3 { line-height: 1.25; margin: calc(var(--space) * 1.5) 0 var(--space); }
+h1 { font-size: 32px; }
+h2 { font-size: 24px; }
+h3 { font-size: 19px; }
+p { margin: 0 0 var(--space); }
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.muted { color: var(--muted); }
+
+code, pre {
+  font-family: var(--font-mono); font-size: 0.9em;
+  background: var(--rule); border-radius: var(--radius);
+}
+code { padding: 2px 6px; }
+pre { padding: calc(var(--space) * 0.75) var(--space); overflow-x: auto; line-height: 1.5; }
+
+button, input, select, textarea {
+  font: inherit; color: inherit;
+  background: var(--bg); border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 8px 14px;
+}
+button { cursor: pointer; background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:hover { background: var(--accent); border-color: var(--accent); }
+
+header, main, footer { margin-bottom: calc(var(--space) * 2); }
+hr { border: none; border-top: 1px solid var(--rule); margin: calc(var(--space) * 2) 0; }

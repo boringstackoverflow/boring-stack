@@ -35,16 +35,17 @@ If the project description includes any of these, the boring stack is not the ri
 
 **Run this the first time `/boring-stack` loads in a project, OR whenever the user asks "what stack should I use?" / "how should I structure this?" / "I'm starting a new app."**
 
-Don't assume. Ask the four questions below, then map the answers to a recommended composition, then **write the decision to disk** so it survives across sessions and future drift.
+Don't assume. Ask the five questions below, then map the answers to a recommended composition, then **write the decision to disk** so it survives across sessions and future drift.
 
-### The four questions
+### The five questions
 
-Ask them in one short turn. Accept rough answers ("a few", "small", "I dunno"). Don't lecture.
+Ask them in one short turn. Accept rough answers ("a few", "small", "just forms mostly", "I dunno"). Don't lecture.
 
 1. **What's the data shape?** Estimate of database size at 1 year (under 10GB / 10–100GB / over 100GB) and concurrent writers at peak (a handful / dozens / hundreds+).
 2. **Single region or multi-region?** "Will users in Sydney complain if the app is hosted in Frankfurt?"
 3. **Team size?** Solo / 2–5 / 5+ engineers expected to commit in the next 12 months.
 4. **Compliance / SLA?** Anything regulated (HIPAA, PCI-DSS), or any uptime contract that costs money to breach.
+5. **Interactivity shape?** Forms-and-pages (CRUD, dashboard, blog, marketplace) / a few rich pages (one Kanban, one editor) / full real-time canvas (Figma, Linear, Notion class). When in doubt, default to forms-and-pages — most products that *think* they're a canvas are actually forms with a couple of rich pages.
 
 ### Mapping answers to a stack
 
@@ -60,6 +61,14 @@ If **any** of those fail:
 - Name the misfit out loud, name which question disqualified the boring stack.
 - Step out of the way. The boring stack isn't the right bootstrap here.
 - Recommend the conventional fit (Postgres + a managed platform + containers, etc.) without sneering. The skill's credibility comes from knowing when to recuse.
+
+**Then map Q5 (interactivity) to the frontend tier** (see §6 in "Stack choices, explained"):
+
+- *Forms-and-pages* → Stage 1: `html/template` + htmx + (Alpine or vanilla). Use the bundled `templates/index.html.tmpl` + `templates/static/`. No build step.
+- *A few rich pages* → Stage 2: Stage 1 shell + one embedded **Preact + HTM** widget (~3KB, no build) or **Lit** web component (~5KB) for the rich page(s).
+- *Full real-time canvas* → Stage 3: pick a conventional frontend toolchain (React + Vite, SvelteKit, Solid). The backend stays boring; the deploy step grows by one line for the frontend build.
+
+Q5 doesn't disqualify the boring stack — even Stage 3 keeps the boring backend. It only changes which frontend pattern STACK.md records.
 
 ### Write the decision down (the stickiness anchor)
 
@@ -78,6 +87,8 @@ Decided <YYYY-MM-DD> via `/boring-stack` intake. Re-run the intake if the projec
 - **HTTP**: Caddy on the VPS, reverse-proxy to the Go binary
 - **Process supervision**: systemd
 - **Hosting**: Hetzner CX22 ($5/mo) or equivalent
+- **Frontend**: Stage <1|2|3> — `html/template` + htmx + (Alpine | vanilla | …); embed.FS for assets. Stage 2 adds a Preact+HTM or Lit widget for the rich page(s). Stage 3 adds a chosen SPA toolchain (e.g., React + Vite) built into `static/spa/` during deploy.
+- **CSS**: single hand-rolled `static/app.css` (CSS custom properties, no framework). Or Tailwind standalone CLI if the team prefers utility classes.
 - **Deploy**: `./deploy.sh` (build → scp → systemctl restart → curl healthz)
 
 ## Why these
@@ -85,11 +96,14 @@ Decided <YYYY-MM-DD> via `/boring-stack` intake. Re-run the intake if the projec
 - Single region (<region>) → no multi-region complexity needed.
 - Team of <N> → monolith with internal packages, not microservices.
 - No life-safety SLA → boring stack's recovery story (Litestream restore) is sufficient.
+- Interactivity is <forms-and-pages|few rich pages|full canvas> → frontend Stage <N>.
 
 ## Migration paths if we outgrow these
 - SQLite → Postgres: `pgloader` + connection-string swap.
 - VPS → load balancer + 2 VPSs: same Caddyfile + binary, no code change.
 - Monolith → services: extract one `internal/` package at a time behind HTTP.
+- Stage 1 → Stage 2: add one embedded Preact+HTM or Lit widget for the rich page; rest of the site stays server-rendered.
+- Stage 2 → Stage 3: pick a SPA toolchain, build into `static/spa/`, route the relevant URLs to its index. Backend Go API stays as-is.
 
 ## Anti-drift
 Subsequent stack decisions in this repo MUST consult this file. If a new requirement contradicts a choice here, update STACK.md explicitly with the date and reason — don't quietly add a Postgres dependency, a Dockerfile, or a Vercel config.
@@ -164,9 +178,32 @@ Refactor to services later, when team size and traffic actually demand it, by ex
 
 > "A single binary with `internal/auth`, `internal/billing`, `internal/email` gives you the same boundaries as services, enforced by the compiler, deployed in one `scp`. When you have a team that needs independent deploys, extract a package behind HTTP. Monolith with internal packages to start, or is there a team-shape reason to begin with services?"
 
+### 6. Server-rendered HTML + htmx over SPA frameworks (for most projects)
+
+Most web apps that *think* they need a single-page app actually need server-rendered pages with partial updates. Rails 7 made this its default in 2021 with Hotwire (Turbo + Stimulus + import maps), explicitly to escape the JavaScript build-tooling tax. The boring-stack equivalent is the same architectural choice in Go form: render HTML from `html/template`, use **htmx** for HTML-over-the-wire partial updates, ship a single hand-rolled `static.css`, and serve everything from `embed.FS` through Caddy. No npm, no `node_modules`, no build step for the frontend.
+
+**htmx is the constant.** It's the architectural choice — HTML, not JSON, is the API your server returns. The companion JS library is a flavor preference, picked by the kind of interactivity the project needs:
+
+- **Alpine.js** (~15KB): local UI state — dropdowns, tabs, accordions, conditional form fields. Pairs cleanly with htmx; most popular pair in the htmx ecosystem.
+- **Stimulus** (~10KB): if you want Rails-style structured controllers outside Rails. More verbose, easier to grow as the app gets larger.
+- **Hyperscript** (~30KB): if you want to go all-in on the htmx author's vision. English-like inline DSL. Divisive syntax.
+- **Vanilla JS + the platform** (0KB): use `<details>`, `<dialog>`, `popover`, IntersectionObserver. Tiny inline scripts where needed. Leanest. More handwritten code for non-trivial widgets.
+
+For CSS, default to a single hand-rolled `static.css`. Modern CSS (custom properties, nesting, container queries, `:has()`, `color-mix()`) covers most things Tailwind solves. Cache-bust with the existing `version` ldflag (`/static/app.css?v=$VERSION`). Escape hatch: the **Tailwind standalone CLI** (single binary, no Node) as a one-line addition to `deploy.sh`. No PostCSS, no SCSS, no CSS-in-JS.
+
+**The three-tier framing for frontend interactivity** (mapped to intake question Q5):
+
+1. **Stage 1 — Pages and forms** (~90% of CRUD apps: dashboards, blogs, marketplaces, internal tools, most SaaS, indie products). Default: `html/template` + htmx + (Alpine or vanilla). No build step. The bundled `templates/index.html.tmpl` + `templates/static/app.css` give you a working starting point; htmx loads from a pinned unpkg URL by default and is one-line replaceable with a self-hosted copy.
+2. **Stage 2 — Rich pockets** (one or two pages need richer state: a Kanban board, a markdown editor, a drag-and-drop sorter). Keep the Stage 1 shell; mount one **Preact + HTM** widget (~3KB, no JSX, no build) or **Lit** web component (~5KB) in a `<div>` for that page. The rest of the site stays server-rendered.
+3. **Stage 3 — Genuinely SPA-shaped** (Figma, Linear, Notion class — the whole product is a real-time canvas). Acknowledge the boring stack isn't the right *frontend* bootstrap and pick the conventional frontend (React + Vite, SvelteKit, Solid). **The backend stays boring**: Go + SQLite + Litestream + Caddy + VPS. The deploy step grows by one line: `npm run build && cp -r dist/ static/spa/` before `go build`. Frontend complexity doesn't have to drag in backend complexity.
+
+Most products that think they're Stage 3 are actually Stage 2 with a few rich pages. The intake exists to surface that honestly before the build pipeline gets locked in.
+
+> "For most pages, Go's `html/template` + htmx covers the interactivity you need without a build step or a `node_modules` folder — the same architectural choice Rails 7 made the default with Hotwire. If one page needs richer state, mount a small Preact+HTM widget in a `<div>` and keep the rest server-rendered. If the product is genuinely SPA-shaped (Figma/Linear/Notion class), pick a conventional frontend toolchain for the SPA and keep the backend boring. What kind of interactivity does this app need: forms-and-pages, a few rich pages, or a full real-time canvas?"
+
 ## Keeping the bootstrap honest (after the stack is picked)
 
-The 5 trade-off sections above cover the obvious bootstrap-time choices. Most of the long-tail work is catching subtle drift in your OWN output once the project is underway: a sentence that creeps toward a Dockerfile, a deploy script that grew to 80 lines, a "we should add Redis here" suggestion that wasn't earned. The 7 manifesto principles operationalize as the triggers below. **When proposing infrastructure, schema, deploy, or architecture changes for a project that bootstrapped with this skill, scan this table first.**
+The 6 trade-off sections above cover the obvious bootstrap-time choices. Most of the long-tail work is catching subtle drift in your OWN output once the project is underway: a sentence that creeps toward a Dockerfile, a deploy script that grew to 80 lines, a "we should add Redis here" suggestion that wasn't earned. The 7 manifesto principles operationalize as the triggers below. **When proposing infrastructure, schema, deploy, or architecture changes for a project that bootstrapped with this skill, scan this table first.**
 
 | Trigger in your draft response | Principle | What to do |
 |---|---|---|
@@ -215,6 +252,8 @@ The templates have already been production-hardened. You don't need to add HSTS 
 | `templates/app.service` | Hardened systemd unit for the app binary | Working dir, User, Environment vars (PORT, DATA_DIR, etc.) |
 | `templates/litestream.service` | systemd unit for Litestream | Usually nothing (uses /etc/litestream.yml + /etc/litestream.env) |
 | `templates/litestream.yml` | Litestream config (DB path + R2 destination) | DB path, R2 endpoint `<account>`, bucket name |
+| `templates/index.html.tmpl` | Minimal Go html/template page that loads `static/app.css` and htmx from a pinned CDN URL | `<title>` and the body content. Cache-bust uses the `Version` field from main.go. To self-host htmx, follow the comment in the file |
+| `templates/static/app.css` | Starter stylesheet (~50 lines, modern CSS, no framework) | Colors, spacing tokens. Edit freely — it's a starting point, not a UI kit |
 
 ### Project init (scaffolding from scratch)
 
@@ -223,16 +262,20 @@ When the user asks "scaffold a new boring-stack project" / "initialize this dire
 **The scaffold creates:**
 
 1. **`go.mod`** — module name from the directory name (or a placeholder `github.com/USER/REPO` the user can `sed` later).
-2. **`main.go`** — minimal HTTP server with `/healthz` + graceful shutdown. About 40 lines. Includes a `version` ldflag hook so `deploy.sh`'s `-X main.version=$SHA` works out of the box.
-3. **`internal/`** directory with a `.gitkeep` — establishes the package-boundary pattern (per the trade-off in §5) before anyone reaches for microservices.
-4. **`data/`** directory with a `.gitkeep` and a `.gitignore` line — where SQLite + Litestream's local state will live; never committed.
-5. **`deploy/`** directory containing the templates copied from `templates/`:
+2. **`main.go`** — minimal HTTP server with `/`, `/healthz`, and `/static/`, embedding templates and assets via `embed.FS`. About 60 lines, including graceful shutdown. Includes a `version` ldflag hook so `deploy.sh`'s `-X main.version=$SHA` works out of the box.
+3. **`templates/index.html.tmpl`** — minimal Go html/template layout copied from `templates/index.html.tmpl`. Loads `static/app.css` (cache-busted with `?v=<Version>`) and htmx from a pinned unpkg URL. The starting point for every page.
+4. **`static/`** directory containing the starter stylesheet:
+   - `app.css` — ~50 lines, modern CSS, no framework. Edit freely.
+   - htmx is loaded from the CDN by default (`https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js`). To self-host, download the file into `static/htmx.min.js` and update the script tag — the template comment explains how.
+5. **`internal/`** directory with a `.gitkeep` — establishes the package-boundary pattern (per the trade-off in §5) before anyone reaches for microservices.
+6. **`data/`** directory with a `.gitkeep` and a `.gitignore` line — where SQLite + Litestream's local state will live; never committed.
+7. **`deploy/`** directory containing the templates copied from `templates/`:
    - `deploy.sh` (chmod +x), `Caddyfile`, `app.service`, `litestream.service`, `litestream.yml`
    - **A `README.md` in `deploy/`** explaining what each file is and which placeholders to swap (host, domain, R2 account ID, bucket name).
-6. **`STACK.md`** — emit per the "Picking the stack" section above (or skip if the user hasn't decided yet and tell them to run the intake).
-7. **`CLAUDE.md`** — append (or create with) the stickiness anchor pointing at `STACK.md` and `/boring-stack`.
-8. **`.gitignore`** — entries for `app`, `app.new`, `app.prev`, `data/`, `*.db`, `*.db-wal`, `*.db-shm`, `.env`, `*.tar.gz`.
-9. **`README.md`** — short, with a "Run locally" + "Deploy" + "Stack" section (the last one links to `STACK.md` and the manifesto).
+8. **`STACK.md`** — emit per the "Picking the stack" section above (or skip if the user hasn't decided yet and tell them to run the intake). Record the frontend tier from Q5.
+9. **`CLAUDE.md`** — append (or create with) the stickiness anchor pointing at `STACK.md` and `/boring-stack`.
+10. **`.gitignore`** — entries for `app`, `app.new`, `app.prev`, `data/`, `*.db`, `*.db-wal`, `*.db-shm`, `.env`, `*.tar.gz`.
+11. **`README.md`** — short, with a "Run locally" + "Deploy" + "Stack" section (the last one links to `STACK.md` and the manifesto).
 
 **The minimal `main.go` should look like this** (roughly — adapt for actual module name + any flags the user mentioned):
 
@@ -241,6 +284,9 @@ package main
 
 import (
     "context"
+    "embed"
+    "html/template"
+    "io/fs"
     "log/slog"
     "net/http"
     "os"
@@ -251,12 +297,33 @@ import (
 
 var version = "dev" // set via -ldflags "-X main.version=$SHA"
 
+//go:embed templates/*.html.tmpl
+var templatesFS embed.FS
+
+//go:embed static
+var staticFS embed.FS
+
+var tmpl = template.Must(template.ParseFS(templatesFS, "templates/*.html.tmpl"))
+
 func main() {
     log := slog.New(slog.NewTextHandler(os.Stdout, nil))
     mux := http.NewServeMux()
+
     mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
         w.Header().Set("Content-Type", "text/plain")
         _, _ = w.Write([]byte("ok " + version + "\n"))
+    })
+
+    static, _ := fs.Sub(staticFS, "static")
+    mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(static))))
+
+    mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+        if r.URL.Path != "/" {
+            http.NotFound(w, r)
+            return
+        }
+        w.Header().Set("Content-Type", "text/html; charset=utf-8")
+        _ = tmpl.ExecuteTemplate(w, "index.html.tmpl", map[string]any{"Version": version})
     })
 
     srv := &http.Server{
@@ -289,7 +356,7 @@ func envOr(k, d string) string {
 }
 ```
 
-This is the minimum viable boring-stack app. SQLite, Litestream, the actual feature code, and any external integrations get added when the user asks for them — not pre-installed. The principle: ship what's needed, nothing more.
+This is the minimum viable boring-stack web app: a server-rendered index page, htmx ready to go, static assets cached by Caddy, `/healthz` for the deploy script. SQLite, Litestream, the actual feature code, and any external integrations get added when the user asks for them — not pre-installed. The principle: ship what's needed, nothing more.
 
 ### Server bring-up sequence (for a fresh VPS)
 
