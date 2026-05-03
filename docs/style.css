@@ -108,7 +108,10 @@ ol.steps strong { font-weight: 500; }
 ul.pushbacks { list-style: none; max-width: 640px; }
 ul.pushbacks li {
   padding: 16px 0; border-top: 1px solid var(--rule);
-  display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: baseline;
+  display: grid; grid-template-columns: 200px 1fr; gap: 16px; align-items: baseline;
+}
+@media (max-width: 540px) {
+  ul.pushbacks li { grid-template-columns: 1fr; gap: 4px; }
 }
 ul.pushbacks li:last-child { border-bottom: 1px solid var(--rule); }
 ul.pushbacks .reflex {
