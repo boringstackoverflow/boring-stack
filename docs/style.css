@@ -28,7 +28,11 @@ nav.topbar {
   margin-bottom: 64px; padding-bottom: 16px; border-bottom: 1px solid var(--rule);
 }
 nav.topbar .nameplate { font-weight: 500; }
-nav.topbar .nameplate a { color: var(--fg); text-decoration: none; }
+nav.topbar .nameplate a {
+  color: var(--fg); text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+nav.topbar .nameplate img { display: block; width: 22px; height: 22px; border-radius: 4px; }
 nav.topbar .links a { color: var(--fg); text-decoration: none; margin-left: 16px; }
 nav.topbar .links a:hover { color: var(--accent); text-decoration: underline; }
 
@@ -188,22 +192,35 @@ footer a:hover { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
 /* Issue page + archive */
-article.issue { margin-top: 32px; }
-article.issue h1 { margin-top: 8px; margin-bottom: 24px; font-family: var(--font-display); font-size: 32px; line-height: 1.2; }
-article.issue h2 { margin-top: 36px; margin-bottom: 12px; font-family: var(--font-display); font-size: 22px; }
-article.issue h3 { margin-top: 28px; margin-bottom: 8px; font-family: var(--font-display); font-size: 18px; }
-article.issue p { margin: 0 0 18px; }
-article.issue ul, article.issue ol { margin: 0 0 18px 24px; }
-article.issue li { margin-bottom: 6px; }
-article.issue code { font-family: var(--font-mono); font-size: 0.92em; background: var(--rule); padding: 1px 6px; border-radius: 3px; }
-article.issue pre { background: var(--rule); padding: 16px; border-radius: 4px; overflow-x: auto; margin: 0 0 18px; }
-article.issue pre code { background: transparent; padding: 0; }
-article.issue blockquote { border-left: 3px solid var(--rule); padding-left: 16px; margin: 0 0 18px; color: var(--fg-muted); }
-article.issue table { border-collapse: collapse; margin: 0 0 18px; width: 100%; font-size: 15px; }
-article.issue th, article.issue td { text-align: left; padding: 6px 12px; border-bottom: 1px solid var(--rule); }
+article.issue { margin-top: 32px; max-width: 640px; font-size: 17px; line-height: 1.7; }
+article.issue h1 { margin-top: 8px; margin-bottom: 12px; font-family: var(--font-display); font-weight: 700; font-size: 36px; line-height: 1.2; letter-spacing: -0.01em; }
+article.issue h2 { margin-top: 56px; margin-bottom: 12px; font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1.3; letter-spacing: -0.005em; }
+article.issue h3 { margin-top: 36px; margin-bottom: 10px; font-family: var(--font-display); font-weight: 700; font-size: 19px; line-height: 1.3; }
+article.issue h1 + p { font-size: 19px; line-height: 1.55; color: var(--fg); margin-bottom: 22px; }
+article.issue p { margin: 0 0 20px; }
+article.issue ul, article.issue ol { margin: 0 0 22px 24px; }
+article.issue li { margin-bottom: 8px; }
+article.issue li > p { margin-bottom: 8px; }
+article.issue code { font-family: var(--font-mono); font-size: 0.9em; background: var(--rule); padding: 2px 6px; border-radius: 3px; }
+article.issue pre { background: var(--rule); padding: 16px 18px; border-radius: 4px; overflow-x: auto; margin: 0 0 22px; line-height: 1.5; }
+article.issue pre code { background: transparent; padding: 0; font-size: 14px; }
+article.issue blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 4px 0 4px 20px;
+  margin: 28px 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1.5;
+  font-style: italic;
+}
+article.issue blockquote p { margin-bottom: 0; }
+article.issue table { border-collapse: collapse; margin: 0 0 22px; width: 100%; font-size: 15px; }
+article.issue th, article.issue td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); }
 article.issue th { font-weight: 500; }
-article.issue a { color: var(--accent); }
-article.issue hr { border: none; border-top: 1px solid var(--rule); margin: 32px 0; }
+article.issue a { color: var(--accent); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+article.issue a:hover { text-decoration-color: var(--accent); }
+article.issue hr { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
 .issue-meta { color: var(--fg-muted); font-family: var(--font-mono); font-size: 14px; margin: 0 0 4px; }
 
 ol.issue-list { list-style: none; margin: 0; padding: 0; }

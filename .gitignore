@@ -10,3 +10,4 @@
 # local dev artifacts
 *.tar.gz
 /dist/
+.gstack/
