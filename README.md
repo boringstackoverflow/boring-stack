@@ -120,4 +120,4 @@ If you've got a war story (boring stack saved you, boring stack failed you, you 
 
 ## Maintained by
 
-[boringstackoverflow](https://github.com/boringstackoverflow). Reach me at boringstackoverflow@gmail.com.
+[@boringstack](https://x.com/boringstack). Reach me at hello@boringstack.org.
