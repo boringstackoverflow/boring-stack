@@ -6,7 +6,7 @@
     <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 03 May 2026 20:15:08 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 03 May 2026 20:51:16 +0000</lastBuildDate>
     
     <item>
       <title>Why this exists</title>

@@ -1,24 +1,29 @@
 ---
 name: boring-stack
-description: Opinionated defaults for building web apps the boring way. Go binary, SQLite + Litestream, Caddy, systemd, a $5 VPS. Runs a 4-question intake to pick a stack, writes STACK.md + a CLAUDE.md anchor so the choice survives across sessions, scaffolds new projects from scratch (`init`), generates production-ready deploy files from bundled templates, walks an 8-step post-deploy verification (TLS / Litestream / restore drill), and pushes back when Claude reflexes toward Postgres, Vercel, Docker, Kubernetes, or microservices for projects that don't need them. Loads when starting a new web app, scaffolding deploy infrastructure, or making stack decisions for a side project, indie product, internal tool, hobby project, or solo-founder context.
+description: Bootstraps new web app projects with a tech stack you can understand. Runs a 4-question intake to pick a stack (Go binary + SQLite + Litestream + Caddy + systemd + a $5 VPS by default; Postgres / managed platforms when the project doesn't fit), writes STACK.md as the source-of-truth decision record plus a CLAUDE.md anchor, scaffolds new projects from scratch (`init`), generates production-ready deploy files from bundled templates, and walks an 8-step post-deploy verification (TLS / Litestream / restore drill). Loads when starting a new web app, scaffolding deploy infrastructure, picking a tech stack, or making bootstrap-time architecture decisions for a side project, indie product, internal tool, hobby project, or solo-founder context.
 ---
 
 # /boring-stack
 
-A skill that argues. When you're starting a web app and the easy reach is the modern hosted-everything pile, this loads a different set of defaults and pushes back when the conversation drifts.
+A skill that bootstraps new web app projects. When you're about to start something new and the easy reach is the modern hosted-everything pile, this runs a short intake, picks a tech stack that fits the project's actual shape, writes the decision down, and scaffolds the code and deploy files you need to ship the first version.
 
-The skill applies to any long-lived web app: side projects, indie products, internal tools, personal sites with a backend, API services, hobby apps, anything that runs as a single Linux process serving HTTP. Not just SaaS, not just MVPs.
+The skill applies to any long-lived web app at the moment it's being started: side projects, indie products, internal tools, personal sites with a backend, API services, hobby apps, anything that will run as a single Linux process serving HTTP. Not just SaaS, not just MVPs. Its job is the bootstrap moment — picking the stack, writing it down, and giving you a working skeleton.
 
 ## When to use this skill
 
+The skill is for the bootstrap moment of a new project. Triggers:
+
 - User is starting a new web app of any shape (side project, internal tool, indie product, API service, hobby project, personal site with backend).
-- User is scaffolding deployment infrastructure for a small Go, Node, or Python app.
-- User asks "what stack should I use" or "how do I deploy this" for something that fits the archetype: single region, small data, can be paged when broken.
+- User asks "what stack should I use", "what should I pick", or "how should I structure this" for a new project.
+- User is scaffolding the initial deployment infrastructure for a small Go, Node, or Python app.
+- User asks "how do I deploy this" for something that fits the archetype: single region, small data, can be paged when broken.
 - User invokes `/boring-stack` directly.
+
+After bootstrap, the skill steps back. The artifacts it writes (STACK.md, the CLAUDE.md anchor, the templates) keep working without it.
 
 ## When NOT to use this skill
 
-If the project description includes any of these, do not push the boring stack. Note the misfit and step out of the way.
+If the project description includes any of these, the boring stack is not the right bootstrap. Name the misfit, recommend the conventional fit, and step out of the way.
 
 - More than ~100GB of database expected.
 - Multi-region active-active requirement.
@@ -49,12 +54,12 @@ If **all** of these hold:
 - Team: under 5 engineers
 - No life-safety / hard-SLA compliance
 
-→ **Boring stack applies.** Recommend Go binary + SQLite + WAL + Litestream + Caddy + systemd + a $5 VPS. Use the templates verbatim.
+→ **Boring stack is the bootstrap default.** Recommend Go binary + SQLite + WAL + Litestream + Caddy + systemd + a $5 VPS. Use the templates verbatim.
 
 If **any** of those fail:
-- Note the misfit out loud, name which question disqualified the boring stack.
-- Step out of the way. Don't push the boring stack against the archetype.
-- Suggest the conventional fit (Postgres + a managed platform + containers, etc.) without sneering. The skill's credibility comes from knowing when to recuse.
+- Name the misfit out loud, name which question disqualified the boring stack.
+- Step out of the way. The boring stack isn't the right bootstrap here.
+- Recommend the conventional fit (Postgres + a managed platform + containers, etc.) without sneering. The skill's credibility comes from knowing when to recuse.
 
 ### Write the decision down (the stickiness anchor)
 
@@ -94,7 +99,7 @@ Subsequent stack decisions in this repo MUST consult this file. If a new require
 
 ```markdown
 ## Stack
-This project uses the boring stack — see `STACK.md`. Before suggesting Postgres, Vercel, Docker, Kubernetes, or any cross-service architecture, consult `STACK.md` and the `/boring-stack` skill's pushback rules.
+This project uses the boring stack — see `STACK.md`. Before suggesting Postgres, Vercel, Docker, Kubernetes, or any cross-service architecture, consult `STACK.md` and the `/boring-stack` skill's stack-choice notes.
 ```
 
 This is the stickiness mechanism. Every future Claude session reads `CLAUDE.md` automatically; the anchor re-loads the stack context without the user having to re-invoke the skill.
@@ -103,11 +108,11 @@ This is the stickiness mechanism. Every future Claude session reads `CLAUDE.md` 
 
 Still write `STACK.md`. Note the actual chosen stack and the reason. The anchor in `CLAUDE.md` should reflect THEIR stack (e.g., "Postgres on Supabase, Vercel for the Next.js frontend"), not the boring stack. Skill loses credibility if it pretends every project chose boring.
 
-## How to push back
+## Stack choices, explained
 
-Each opinion below is a pattern. When the user's reasoning (or your own default) reaches for the modern reflex, push back with two sentences plus a question. Always defer to the user's call. Never refuse.
+The 4-question intake maps to specific defaults. The five sections below explain *why* each default — what it trades, when it stops fitting, and what the migration looks like if the project outgrows it.
 
-The rhythm: name the trade-off, name the migration path, ask what they want.
+When the user is undecided between the boring default and a more conventional choice, present the trade-off in two sentences plus a question. The rhythm: name the trade-off, name the migration path, ask what fits their project. Always defer to their call. Never refuse.
 
 ### 1. SQLite over Postgres (for under ~100 concurrent writers)
 
@@ -115,7 +120,7 @@ Postgres is a great database. For a web app that won't see more than a few dozen
 
 The fear that drives people to Postgres prematurely is "what if I outgrow it." The migration when you actually outgrow it is `pgloader` on the file plus a connection-string swap, an afternoon of work. You're not locked in. You're trading a 1% chance of a one-day migration for the guaranteed cost of running Postgres for years.
 
-> "SQLite + WAL handles your write profile here. Litestream gives you continuous backup to R2 for about 50 cents a month. If you cross 100 concurrent writers or need cross-region replication, the migration to Postgres is `pgloader` plus a connection string. Want me to use Postgres anyway?"
+> "SQLite + WAL handles your write profile here. Litestream gives you continuous backup to R2 for about 50 cents a month. If you cross 100 concurrent writers or need cross-region replication, the migration to Postgres is `pgloader` plus a connection string. Does SQLite fit your project, or is there something specific that needs Postgres?"
 
 ### 2. VPS + Caddy over Vercel / Netlify / Railway / Render
 
@@ -125,7 +130,7 @@ Caddy auto-handles TLS via Let's Encrypt. No certbot, no cron, no nginx config. 
 
 If you outgrow one VPS (typically around 10k daily active users for a normal web app), the same Caddyfile and binary deploy behind a load balancer in front of two VPSs. You won't hit that wall with a side project.
 
-> "A $5 Hetzner box with the bundled Caddyfile gives you HTTPS, security headers, and stays $5 at scale. The platform tier is convenient but it's $20 to $40 a month and you're locked into their build pipeline. Want platform anyway?"
+> "A $5 Hetzner box with the bundled Caddyfile gives you HTTPS, security headers, and stays $5 at scale. The platform tier is convenient but it's $20 to $40 a month and you're locked into their build pipeline. VPS or platform — which fits your appetite for ops vs cost?"
 
 ### 3. stdlib `database/sql` + sqlc over ORM (Prisma, GORM, ActiveRecord, SQLAlchemy)
 
@@ -135,7 +140,7 @@ ORMs save you from writing CRUD twice. The cost: you can't read the SQL the ORM 
 
 There's no migration story because sqlc IS the migration. You can keep using it as the project grows.
 
-> "sqlc generates type-safe Go from `.sql` files. You get the editor safety of an ORM without losing the ability to read your own queries. Want a runtime ORM anyway?"
+> "sqlc generates type-safe Go from `.sql` files. You get the editor safety of an ORM without losing the ability to read your own queries. Sqlc or a runtime ORM — which fits how you want to work with the database?"
 
 ### 4. systemd + single binary over Docker / Kubernetes (for single-server apps)
 
@@ -147,7 +152,7 @@ Kubernetes is the right answer at Google's scale. Below that, it's an org chart 
 
 If you ever genuinely need containers (polyglot services, complex isolation), one `Dockerfile` plus `docker compose` covers most cases. K8s is the answer to a question you'll know if you have.
 
-> "systemd handles process management, restarts, hardening, and logging in 45 lines of `app.service` (already in the templates). Docker is correct when you have polyglot services. For one Go binary, it's overhead. Want a container anyway?"
+> "systemd handles process management, restarts, hardening, and logging in 45 lines of `app.service` (already in the templates). Docker is correct when you have polyglot services. For one Go binary, it's overhead. Single-binary on systemd, or do you have a constraint that needs containers?"
 
 ### 5. Single Go binary with internal packages over microservices (for small teams)
 
@@ -157,35 +162,35 @@ A single Go binary with `internal/auth`, `internal/billing`, `internal/email` pa
 
 Refactor to services later, when team size and traffic actually demand it, by extracting one package at a time behind an HTTP interface. The boundary is already there. The signature change is mechanical.
 
-> "A single binary with `internal/auth`, `internal/billing`, `internal/email` gives you the same boundaries as services, enforced by the compiler, deployed in one `scp`. When you have a team that needs independent deploys, extract a package behind HTTP. Want microservices anyway?"
+> "A single binary with `internal/auth`, `internal/billing`, `internal/email` gives you the same boundaries as services, enforced by the compiler, deployed in one `scp`. When you have a team that needs independent deploys, extract a package behind HTTP. Monolith with internal packages to start, or is there a team-shape reason to begin with services?"
 
-## Self-check before output (manifesto enforcement)
+## Keeping the bootstrap honest (after the stack is picked)
 
-The 5 pushback patterns above are the obvious cases. Most of the work is catching the subtle drift in your OWN output: a sentence that creeps toward a Dockerfile, a deploy script that grew to 80 lines, a "we should add Redis here" suggestion that wasn't earned. The 7 manifesto principles operationalize as triggers below. **Before sending any response that proposes infrastructure, schema, deploy, or architecture changes, walk this table.**
+The 5 trade-off sections above cover the obvious bootstrap-time choices. Most of the long-tail work is catching subtle drift in your OWN output once the project is underway: a sentence that creeps toward a Dockerfile, a deploy script that grew to 80 lines, a "we should add Redis here" suggestion that wasn't earned. The 7 manifesto principles operationalize as the triggers below. **When proposing infrastructure, schema, deploy, or architecture changes for a project that bootstrapped with this skill, scan this table first.**
 
 | Trigger in your draft response | Principle | What to do |
 |---|---|---|
-| You're about to suggest a "new" or "trendy" tool over an established one | **1. Boring is a feature** | Note that the boring alternative exists. Recommend it unless the user explicitly named a constraint the trendy tool solves and the boring one doesn't. |
-| You're about to add a managed service (Vercel, Supabase, Upstash, Pinecone, Railway, Render, Heroku, Fly, etc.) | **2. Cloud bill is the metric** | Estimate the monthly cost at 100 customers. If > $20/mo, present the boring alternative explicitly with the cost-delta. Defer to user. |
-| You're about to recommend Postgres for a project under STACK.md's "boring" criteria | **3. SQLite is a database** | Stop. Re-read STACK.md. Apply pushback #1. If the user is overriding consciously, that's fine — update STACK.md with the reason. |
-| You're about to write a Dockerfile, k8s manifest, Helm chart, or `docker-compose.yml` | **4. K8s = server farm** | Stop. Confirm the user has multi-service polyglot needs. If single Go binary, recommend systemd + the bundled `app.service` instead. |
+| You're about to suggest a "new" or "trendy" tool over an established one | **1. Boring is a feature** | Note that the boring alternative exists. Recommend it unless the user named a constraint the trendy tool solves and the boring one doesn't. |
+| You're about to add a managed service (Vercel, Supabase, Upstash, Pinecone, Railway, Render, Heroku, Fly, etc.) | **2. Cloud bill is the metric** | Estimate the monthly cost at 100 customers. If > $20/mo, surface the boring alternative explicitly with the cost-delta. Defer to user. |
+| You're about to recommend Postgres for a project under STACK.md's "boring" criteria | **3. SQLite is a database** | Pause. Re-read STACK.md. Surface the trade-off from §1 above. If the user is overriding consciously, that's fine — update STACK.md with the reason. |
+| You're about to write a Dockerfile, k8s manifest, Helm chart, or `docker-compose.yml` | **4. K8s = server farm** | Pause. Confirm the user has multi-service polyglot needs. If single Go binary, recommend systemd + the bundled `app.service` instead. |
 | You're about to write a deploy script | **5. Deploy on a postcard** | Count lines after writing. If > 30 (excluding comments), explain what each extra line buys and offer to remove the ones that don't earn their place. |
 | You're about to introduce a new service, daemon, sidecar, or background worker | **6. One person should understand it** | Ask: can the user describe the full request lifecycle in one paragraph after this addition? If no, propose the inline alternative (a goroutine, a cron, a function call) first. |
 | You're about to write code instead of operational concerns (backups, alerts, restore drills, secrets rotation) | **7. Babysitter > cleverness** | Surface the operational gap explicitly. Don't ship cleverness on top of un-verified backups. Point at the bundled Litestream config + a weekly restore-drill cron. |
 
-### How to use the table mid-response
+### How to use the table
 
-You don't have to enumerate all 7 every time. The pattern is:
+You don't have to enumerate all 7 every time. The pattern:
 1. Draft your response normally.
 2. Scan it once for the triggers in the left column.
-3. If a trigger fires, fold the principle into the response BEFORE sending — either as a pushback (two sentences + question, per the rhythm) or as a STACK.md update suggestion.
+3. If a trigger fires, fold the principle into the response BEFORE sending — either as a trade-off note (two sentences + question) or as a STACK.md update suggestion.
 4. If no trigger fires, send.
 
-This is a cheap pass, not a chore. The skill earns its keep by catching the things that would otherwise slip through.
+This is a cheap pass, not a chore. The bootstrap skill earns its keep by leaving artifacts (STACK.md, the CLAUDE.md anchor) that keep these defaults visible later, without re-running the intake.
 
 ### When the principles conflict with the user
 
-Principles are defaults, not laws. If the user has explicitly chosen something that violates a principle (e.g., "yes I want Docker even for one Go binary, my team standardizes on it"), respect the choice and **update STACK.md** to record the override and the reason. Don't keep pushing back on the same decision in subsequent turns — that's lecturing, which violates the tone guardrails below.
+Principles are defaults, not laws. If the user has explicitly chosen something that diverges from a principle (e.g., "yes I want Docker even for one Go binary, my team standardizes on it"), respect the choice and **update STACK.md** to record the divergence and the reason. Don't keep raising the same trade-off in subsequent turns — that's lecturing, which violates the tone guardrails below.
 
 ## Generating deploy infrastructure
 
@@ -219,7 +224,7 @@ When the user asks "scaffold a new boring-stack project" / "initialize this dire
 
 1. **`go.mod`** — module name from the directory name (or a placeholder `github.com/USER/REPO` the user can `sed` later).
 2. **`main.go`** — minimal HTTP server with `/healthz` + graceful shutdown. About 40 lines. Includes a `version` ldflag hook so `deploy.sh`'s `-X main.version=$SHA` works out of the box.
-3. **`internal/`** directory with a `.gitkeep` — establishes the package-boundary pattern (per pushback #5) before anyone reaches for microservices.
+3. **`internal/`** directory with a `.gitkeep` — establishes the package-boundary pattern (per the trade-off in §5) before anyone reaches for microservices.
 4. **`data/`** directory with a `.gitkeep` and a `.gitignore` line — where SQLite + Litestream's local state will live; never committed.
 5. **`deploy/`** directory containing the templates copied from `templates/`:
    - `deploy.sh` (chmod +x), `Caddyfile`, `app.service`, `litestream.service`, `litestream.yml`
@@ -332,11 +337,12 @@ Never commit secrets to git. Never put them in `Caddyfile` or `app.service` dire
 
 ## Tone guardrails
 
-- Always explain the WHY. Never assert the choice without the trade-off.
-- Always provide the migration path. The user should know how to escape if they outgrow the choice.
-- Never refuse. Push back, then defer.
-- Don't lecture. Two sentences plus a question is the rhythm.
-- If the project genuinely doesn't fit the archetype (see "When NOT to use"), say so plainly and step out of the way. The skill loses credibility if it pushes the boring stack at apps that don't suit it.
+- Always explain the WHY. Never assert a choice without the trade-off.
+- Always provide the migration path. The user should know how to grow out of the choice if the project does.
+- Frame the work as a bootstrap helper, not an arguer. The skill helps the user define a stack, not defend one.
+- Defer to the user. The intake's job is to surface the right defaults; the user's job is to pick.
+- Don't lecture. Two sentences plus a question is the rhythm when a trade-off is worth surfacing.
+- If the project genuinely doesn't fit the archetype (see "When NOT to use"), say so plainly and recommend the conventional fit. The skill's credibility comes from knowing when the boring stack isn't the right bootstrap.
 - When the user asks about deploy or config, point at the bundled template. Don't reinvent.
 
 ## Linked artifacts

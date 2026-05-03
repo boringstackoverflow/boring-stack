@@ -23,14 +23,14 @@ body { padding: 24px; max-width: 720px; margin: 0 auto 0 24px; }
 ::selection { background: var(--fg); color: var(--bg); }
 
 nav.topbar {
-  display: flex; justify-content: space-between; align-items: baseline;
+  display: flex; justify-content: space-between; align-items: center;
   font-family: var(--font-mono); font-size: 16px;
   margin-bottom: 64px; padding-bottom: 16px; border-bottom: 1px solid var(--rule);
 }
-nav.topbar .nameplate { font-weight: 500; }
+nav.topbar .nameplate { font-weight: 500; display: flex; align-items: center; }
 nav.topbar .nameplate a {
   color: var(--fg); text-decoration: none;
-  display: inline-flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 8px;
 }
 nav.topbar .nameplate img { display: block; width: 22px; height: 22px; border-radius: 4px; }
 nav.topbar .links a { color: var(--fg); text-decoration: none; margin-left: 16px; }

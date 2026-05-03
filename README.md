@@ -8,8 +8,8 @@ This repo is the open-source part that makes AI coding tools do the same by defa
 
 ## What's in the box
 
-- **`/boring-stack`**: an AI coding skill that argues for the boring stack when you start a side project. Pushes back on Postgres, Vercel, ORMs, Docker, Kubernetes, microservices when they don't fit. Two sentences plus a question per pushback. Always defers to your call.
-- **`templates/`**: battle-tested reference configs from the Borela production stack. `deploy.sh` (10 lines), `Caddyfile` (8 lines), `app.service` (hardened systemd unit), `litestream.service`, `litestream.yml`. Drop them in, replace the hostnames, ship.
+- **`/boring-stack`**: an AI coding skill that bootstraps a new side project with the boring stack. Runs a 4-question intake, picks a tech stack that fits, writes the decision to `STACK.md`, scaffolds the code, and generates the deploy files. Surfaces trade-offs (SQLite vs Postgres, VPS vs Vercel, systemd vs Docker, monolith vs microservices) as two-sentence-plus-question notes. Always defers to your call.
+- **`templates/`**: battle-tested reference configs from real production use. `deploy.sh` (10 lines), `Caddyfile` (8 lines), `app.service` (hardened systemd unit), `litestream.service`, `litestream.yml`. Drop them in, replace the hostnames, ship.
 - **`MANIFESTO.md`**: seven principles. Quote them, link them, fork them.
 - **The newsletter**: weekly field notes on building with Boring Stack: what shipped, what broke, what the bill says, which defaults held up, and which ones need to be sharpened.
 
@@ -114,9 +114,9 @@ The skill is MIT and stays MIT no matter what happens to commercial Borela. Use 
 
 ## Contributing
 
-Issues and PRs welcome. The bar for new pushback rules is high: each one needs a real trade-off with numbers, a real migration path, and an honest "want it anyway?" closer. The skill loses credibility if it pushes the boring stack at projects that don't fit, so the "When NOT to use this skill" section in `SKILL.md` is load-bearing too.
+Issues and PRs welcome. The bar for new stack-choice trade-offs is high: each one needs real numbers, a real migration path, and an honest "does this fit your project?" closer. The skill loses credibility if it bootstraps the boring stack at projects that don't fit, so the "When NOT to use this skill" section in `SKILL.md` is load-bearing too.
 
-If you've got a war story (boring stack saved you, boring stack failed you, you migrated off and here's why), open an issue. The weekly newsletter pulls from those reports, the Borela build, and real projects using the stack.
+If you've got a war story (boring stack saved you, boring stack failed you, you migrated off and here's why), open an issue. The weekly newsletter pulls from those reports and from real projects using the stack.
 
 ## Maintained by
 
