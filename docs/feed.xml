@@ -6,7 +6,15 @@
     <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 03 May 2026 20:51:16 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 07 May 2026 05:08:41 +0000</lastBuildDate>
+    
+    <item>
+      <title>One VPS, one binary, one database</title>
+      <link>https://boringstack.org/issues/2026-05-05-one-vps-one-binary-one-database.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/2026-05-05-one-vps-one-binary-one-database.html</guid>
+      <pubDate>Tue, 05 May 2026 00:00:00 +0000</pubDate>
+      <description>The Boring Stack in one sitting — what each piece is, why it's there, and what it costs. The mental model you need before you read anything else here.</description>
+    </item>
     
     <item>
       <title>Why this exists</title>

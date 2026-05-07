@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One VPS, one binary, one database — Boring Stack</title>
+<meta name="description" content="The Boring Stack in one sitting — what each piece is, why it&#39;s there, and what it costs. The mental model you need before you read anything else here.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-05-05-one-vps-one-binary-one-database.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="One VPS, one binary, one database">
+<meta property="og:description" content="The Boring Stack in one sitting — what each piece is, why it&#39;s there, and what it costs. The mental model you need before you read anything else here.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-05-05-one-vps-one-binary-one-database.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-05-05">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../"><img src="../favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="./">issues</a>
+    <a href="../#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">May 5, 2026 · issue #2</p>
+  <h1>One VPS, one binary, one database</h1>
+  <p>If you remember nothing else from this site, remember this:</p>
+<p><strong>One VPS. One Go binary. One SQLite file. Continuous backup to object storage. Caddy for HTTPS. systemd to keep it alive. A shell script to deploy.</strong></p>
+<p>That is the whole stack. The rest of this issue is what each piece is doing, what it replaces, and what it costs at scale.</p>
+<p>If that sentence is enough — go read <a href="/manifesto.html">the manifesto</a>, install <a href="/#install">the skill</a>, and get on with shipping. If you want to know why each piece is there, keep reading.</p>
+<h2 id="the-picture">The picture</h2>
+<pre><code>browser
+  │
+  ▼
+┌──────────────────────────────────────────┐
+│  one $5 VPS (Hetzner cx22, 4GB RAM)      │
+│                                          │
+│  Caddy ──► Go binary ──► SQLite (WAL)    │
+│                             │            │
+│                             ▼            │
+│                         Litestream       │
+└─────────────────────────────┬────────────┘
+                              │
+                              ▼
+                        Cloudflare R2
+                     (continuous backup)
+</code></pre>
+<p>That&rsquo;s the architecture diagram. It fits in a tweet. It also runs the entire control plane for <a href="https://borela.dev/">Borela</a> in production: marketing site, magic-link auth, dashboard, locked v1 protocol, dev mailer.</p>
+<h2 id="what-each-piece-is-doing">What each piece is doing</h2>
+<h3 id="the-vps">The VPS</h3>
+<p>A $5/mo Hetzner cx22 (4 GB RAM, 2 vCPU, 40 GB disk, 20 TB transfer). Pick a region close to your users. SSH in. It&rsquo;s a Linux box. You can read every file on it.</p>
+<p>This is not a compromise. A single VPS is a forcing function. It tells you: if you can&rsquo;t fit the app here, you owe yourself an honest answer about why, before you reach for K8s.</p>
+<h3 id="the-go-binary">The Go binary</h3>
+<p>One file. <code>CGO_ENABLED=0 go build -o app .</code> produces a statically-linked Linux binary. <code>scp</code> it to the VPS. <code>systemctl restart</code>. Done. No interpreter, no runtime, no <code>node_modules</code>, no container layer.</p>
+<p>The HTTP router is <code>http.ServeMux</code> from the standard library. Since Go 1.22 it supports method-prefixed routes (<code>mux.HandleFunc(&quot;POST /v1/whatever&quot;, handler)</code>). You no longer need a router library.</p>
+<h3 id="the-database">The database</h3>
+<p>SQLite, in WAL mode, in a single file at <code>/home/&lt;app&gt;/data/app.db</code>.</p>
+<p>WAL mode means: readers do not block writers, writers do not block readers. You get real concurrent reads with one writer. For 99% of side projects, that ceiling is irrelevant — modern SQLite handles 10k+ writes/sec on an NVMe-backed VPS.</p>
+<p>The big objection — &ldquo;but what about backups?&rdquo; — is the next piece.</p>
+<h3 id="litestream">Litestream</h3>
+<p><a href="https://litestream.io/">Litestream</a> watches your SQLite WAL and streams it to object storage in near-real-time. If your VPS dies, you can restore the database to the last second on a fresh box with one command:</p>
+<pre><code class="language-bash">litestream restore -o /var/lib/app/app.db s3://bucket/app.db
+</code></pre>
+<p>We use Cloudflare R2 because it has zero egress fees. The bill is $0.12/mo at our scale. You can also use S3, B2, GCS — anything S3-compatible.</p>
+<p>You do not have a backup until you have restored from it. Run a restore drill the day you set this up. Then run another one in a month. Future issues will go deep on this.</p>
+<h3 id="caddy">Caddy</h3>
+<p>Caddy is a web server that handles HTTPS automatically. You put your domain in the Caddyfile, Caddy talks to Let&rsquo;s Encrypt, you have TLS forever. No certbot, no cron, no nginx config.</p>
+<p>The full Caddyfile for a one-app box:</p>
+<pre><code>api.example.com {
+    reverse_proxy 127.0.0.1:8080
+}
+</code></pre>
+<p>That&rsquo;s it. That&rsquo;s the whole web server config.</p>
+<h3 id="systemd">systemd</h3>
+<p>systemd runs your binary. It restarts it if it crashes (<code>Restart=on-failure</code>). It captures stdout/stderr into the journal, where you read it with <code>journalctl -u app -f</code>. It&rsquo;s already on every modern Linux box. It&rsquo;s the runtime you didn&rsquo;t have to install.</p>
+<p>A hardened service file is about 22 lines:</p>
+<pre><code class="language-ini">[Service]
+Type=simple
+User=app
+ExecStart=/usr/local/bin/app
+Restart=on-failure
+RestartSec=2
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/home/app/data
+PrivateTmp=yes
+</code></pre>
+<p>The full template is <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/app.service">in the repo</a>.</p>
+<h3 id="the-deploy-script">The deploy script</h3>
+<p>10 lines. Build, ship, install, restart, smoke-test:</p>
+<pre><code class="language-bash">#!/usr/bin/env bash
+set -euo pipefail
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app .
+scp app root@$VPS:/tmp/app.new
+ssh root@$VPS '
+  sudo install -m 755 /tmp/app.new /usr/local/bin/app
+  sudo systemctl restart app
+  sleep 1
+  curl -fsS http://127.0.0.1:8080/healthz
+'
+</code></pre>
+<p>That&rsquo;s the whole deploy pipeline. It&rsquo;s readable when tired. It works on every box that has SSH. It does not require a Docker registry, a CI vendor, or a YAML file.</p>
+<h2 id="what-this-replaces">What this replaces</h2>
+<table>
+<thead>
+<tr>
+<th>You&rsquo;d reach for</th>
+<th>Boring Stack picks</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Postgres</td>
+<td>SQLite + WAL + Litestream</td>
+<td>One file. Concurrent reads. Continuous backup. Migration to Postgres later is <code>pgloader</code> + a connection string.</td>
+</tr>
+<tr>
+<td>Vercel / Render / Fly</td>
+<td>Hetzner + Caddy</td>
+<td>$5/mo at every scale. Auto-HTTPS. No platform lock-in.</td>
+</tr>
+<tr>
+<td>Prisma / GORM / SQLAlchemy</td>
+<td>stdlib + sqlc</td>
+<td>Type-safe Go generated from <code>.sql</code> files. No runtime layer. You can read your own queries.</td>
+</tr>
+<tr>
+<td>Docker / docker-compose / K8s</td>
+<td>systemd + one binary</td>
+<td>Already on every Linux box. <code>Restart=on-failure</code> is one line.</td>
+</tr>
+<tr>
+<td>GitHub Actions deploy pipeline</td>
+<td>10-line shell script</td>
+<td>Readable when tired. No vendor. No YAML.</td>
+</tr>
+<tr>
+<td>Datadog / New Relic</td>
+<td><code>journalctl</code> + healthz + uptime check</td>
+<td>Free for the first year of any side project. Add observability when there&rsquo;s something to observe.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="what-this-costs">What this costs</h2>
+<p>The exact bill for the <a href="https://borela.dev/">Borela</a> control plane this month:</p>
+<pre><code>hetzner cx22          $4.59
+cloudflare r2         $0.12
+boringstack.org dns   $1.25
+resend (free tier)    $0.00
+────────────────────────────
+total                 $5.96/mo
+</code></pre>
+<p>That&rsquo;s the whole control plane: marketing site, magic-link auth, dashboard, the locked v1 protocol that babysits real production apps, and the dev mailer. One box. One database. Six dollars.</p>
+<p>Future issues will publish this number every month. When it changes, I&rsquo;ll explain why.</p>
+<h2 id="when-this-is-wrong">When this is wrong</h2>
+<p>Boring Stack is not the right answer for every project. The skill ships a &ldquo;When NOT to use this&rdquo; section, and so does this site. The honest list:</p>
+<ul>
+<li>More than ~100GB of database. SQLite is fine; the operational story for 100GB+ files starts to suck.</li>
+<li>Multi-region active-active. SQLite does not replicate to multiple writers. If you need that, you need Postgres + something like Aurora or CockroachDB.</li>
+<li>Compliance where downtime matters in human-life terms. Medical, life-safety. Use a platform with an SLA you can sue.</li>
+<li>More than ~50 engineers on the codebase. The monolith starts to creak. Boundaries become political.</li>
+<li>Real-time collaboration on shared state. Operational transforms or CRDTs are their own architecture; SQLite is the wrong primitive.</li>
+</ul>
+<p>If your project doesn&rsquo;t match any of those, Boring Stack probably fits. The point isn&rsquo;t to never use Postgres or never use Docker. The point is to <strong>make complexity a conscious choice</strong> instead of the default.</p>
+<h2 id="the-deal">The deal</h2>
+<p>This is issue #1 of a weekly newsletter. The deal is one practical field note every Saturday — what shipped, what broke, how the bill changed, which defaults held up, and what the latest restore drill found.</p>
+<p>Next Saturday: <strong>&ldquo;SQLite is a database. Stop apologizing.&rdquo;</strong> The full case for SQLite in production, with benchmarks, with the failure modes, with the migration path when you outgrow it.</p>
+<p><a href="/#newsletter">Subscribe</a> if you want it. <a href="https://github.com/boringstackoverflow/boring-stack">Star the repo</a> if you want to follow along quietly. <a href="/#install">Install the skill</a> if you&rsquo;re ready to try it on a project.</p>
+<p>Reply with your stack. I read every reply.</p>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT / <a href="mailto:hello@boringstack.org">hello@boringstack.org</a></span>
+</footer>
+
+</body>
+</html>
