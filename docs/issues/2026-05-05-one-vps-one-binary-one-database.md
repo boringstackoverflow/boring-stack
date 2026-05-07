@@ -167,9 +167,9 @@ If your project doesn't match any of those, Boring Stack probably fits. The poin
 
 ## The deal
 
-This is issue #1 of a weekly newsletter. The deal is one practical field note every Saturday — what shipped, what broke, how the bill changed, which defaults held up, and what the latest restore drill found.
+This is issue #2 of a weekly newsletter. The deal is one practical field note every Tuesday — what shipped, what broke, how the bill changed, which defaults held up, and what the latest restore drill found.
 
-Next Saturday: **"SQLite is a database. Stop apologizing."** The full case for SQLite in production, with benchmarks, with the failure modes, with the migration path when you outgrow it.
+Next Tuesday: **"SQLite is a database. Stop apologizing."** The full case for SQLite in production, with benchmarks, with the failure modes, with the migration path when you outgrow it.
 
 [Subscribe](/#newsletter) if you want it. [Star the repo](https://github.com/boringstackoverflow/boring-stack) if you want to follow along quietly. [Install the skill](/#install) if you're ready to try it on a project.
 
