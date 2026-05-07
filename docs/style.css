@@ -25,7 +25,8 @@ body { padding: 24px; max-width: 960px; margin: 0 auto; }
 nav.topbar {
   display: flex; justify-content: space-between; align-items: center;
   font-family: var(--font-mono); font-size: 16px;
-  margin-bottom: 64px; padding-bottom: 16px; border-bottom: 1px solid var(--rule);
+  max-width: var(--content-max); margin: 0 auto 64px;
+  padding-bottom: 16px; border-bottom: 1px solid var(--rule);
 }
 nav.topbar .nameplate { font-weight: 500; display: flex; align-items: center; }
 nav.topbar .nameplate a {
@@ -187,6 +188,7 @@ ul.pushbacks .why { display: block; color: var(--fg-muted); font-size: 15px; mar
 
 footer {
   font-family: var(--font-mono); font-size: 14px; color: var(--fg-muted);
+  max-width: var(--content-max); margin: 0 auto;
   padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--rule);
   display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between;
 }
