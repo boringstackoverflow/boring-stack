@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQLite is a database. Stop apologizing. — Boring Stack</title>
+<meta name="description" content="The full case for SQLite in production: what it actually does well, what WAL mode changes, what Litestream adds, what fails, when to switch to Postgres, and how to migrate when you do.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-05-12-sqlite-is-a-database.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="SQLite is a database. Stop apologizing.">
+<meta property="og:description" content="The full case for SQLite in production: what it actually does well, what WAL mode changes, what Litestream adds, what fails, when to switch to Postgres, and how to migrate when you do.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-05-12-sqlite-is-a-database.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-05-12">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../"><img src="../favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="./">issues</a>
+    <a href="../#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">May 12, 2026 · issue #3</p>
+  <h1>SQLite is a database. Stop apologizing.</h1>
+  <p>There is a particular sentence that shows up in every SQLite-in-production thread:</p>
+<blockquote>
+<p>&ldquo;Yeah, but it&rsquo;s not a <em>real</em> database.&rdquo;</p>
+</blockquote>
+<p>It is. It has been for two decades. It runs on every iPhone in the world. It runs Expensify. It runs the weather data inside your operating system. It is, by deployment count, the most widely deployed database engine on Earth.</p>
+<p>What people mean when they say &ldquo;real database&rdquo; is usually one of:</p>
+<ol>
+<li><em>Concurrent writers across machines</em> — a thing you almost certainly do not need on day one.</li>
+<li><em>A managed-service dashboard</em> — a thing you don&rsquo;t need at all.</li>
+<li><em>A familiar shape from a job ten years ago</em> — the actual reason.</li>
+</ol>
+<p>This issue is the long version of why SQLite is the right default for the small web app you are about to build, what it does well, what breaks, and what you do on the day you outgrow it.</p>
+<h2 id="what-sqlite-is">What SQLite is</h2>
+<p>A C library. Not a server. Not a daemon. Not a thing you connect to over a socket. Your Go binary opens a file with <code>database/sql</code>, and queries run inside your process. There is no second process to monitor.</p>
+<p>This single design choice is what makes everything downstream simple:</p>
+<ul>
+<li>No connection pool to tune.</li>
+<li>No connection limits to hit.</li>
+<li>No socket round-trip per query.</li>
+<li>No &ldquo;the database is down&rdquo; failure mode separate from &ldquo;the app is down.&rdquo;</li>
+<li>No version-skew between your client driver and your server.</li>
+</ul>
+<p>A read in SQLite is a function call. The latency floor is microseconds, not milliseconds.</p>
+<h2 id="what-wal-mode-changes">What WAL mode changes</h2>
+<p>The default journal mode in SQLite is <em>rollback</em>: writers and readers serialize through a single lock. Fine for a CLI tool. Painful the first time you have an HTTP handler reading rows while a background worker is writing.</p>
+<p>Set this at startup:</p>
+<pre><code class="language-sql">PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA busy_timeout = 5000;
+</code></pre>
+<p>Three lines. What they buy you:</p>
+<ul>
+<li><strong>WAL mode</strong>: writes append to a side log; readers see a consistent snapshot of the main database without blocking. Concurrent reads with a single writer — the exact shape of a small web app.</li>
+<li><strong>synchronous = NORMAL</strong>: writes are durable on commit but skip the extra fsync that <em>FULL</em> mode does on every page write. Standard for application workloads; not for &ldquo;must survive simultaneous power loss to two disks&rdquo; scenarios.</li>
+<li><strong>busy_timeout = 5000</strong>: if a write does have to wait for the writer lock, wait up to 5 seconds before failing. Eliminates the &ldquo;SQLITE_BUSY&rdquo; errors that scare people off in benchmarks they ran wrong.</li>
+</ul>
+<p>Set these once, at open. Forget about them.</p>
+<p>After WAL: a modern SQLite on an NVMe-backed VPS handles <strong>10,000+ writes per second</strong> before contention shows up. Reads are bounded by memory bandwidth — for any database that fits in RAM (and most do), they are effectively free.</p>
+<h2 id="what-litestream-adds">What Litestream adds</h2>
+<p>The honest objection to SQLite-as-production-database is not performance. It&rsquo;s backups.</p>
+<p>If your VPS dies and your backup strategy is &ldquo;I cron&rsquo;d a <code>cp</code> every night,&rdquo; you will lose up to 24 hours of writes. That&rsquo;s a real problem. It&rsquo;s also a problem with a clean answer: <a href="https://litestream.io/">Litestream</a>.</p>
+<p>Litestream watches your SQLite WAL and streams every change to object storage in near-real-time. The recovery story:</p>
+<pre><code class="language-bash">litestream restore -o /home/app/data/app.db s3://bucket/app.db
+</code></pre>
+<p>One command. Restores to the last second of writes. A typical small DB (hundreds of MB) restores in well under a minute on a fresh box.</p>
+<p>We use Cloudflare R2 because it has zero egress fees. The bill at the boringstack.org scale is <strong>$0.00/mo</strong> — under the R2 free tier, even with WAL frames streaming continuously.</p>
+<p>The rule that separates &ldquo;I have a backup&rdquo; from &ldquo;I have a backup&rdquo;:</p>
+<blockquote>
+<p>If you have not restored from your backup in the last 30 days, you do not have a backup.</p>
+</blockquote>
+<p>Add a restore-drill cron that runs weekly into a <code>/tmp</code> dir, runs <code>sqlite3 .schema</code> and a row count, then deletes it. If the cron fails, you find out before you need it.</p>
+<h2 id="what-actually-fails">What actually fails</h2>
+<p>Here are the failure modes that show up in production, ranked by how often they bite people:</p>
+<h3 id="1-the-i-put-the-db-on-nfs-failure">1. The &ldquo;I put the DB on NFS&rdquo; failure</h3>
+<p>SQLite locking on networked filesystems is broken. Always. Don&rsquo;t put the DB file on NFS, on SMB, on a Docker bind-mount that crosses the VM boundary, or on any shared filesystem that doesn&rsquo;t implement POSIX locking honestly. Local NVMe. Always.</p>
+<h3 id="2-the-i-forgot-the-wal-files-exist-backup-failure">2. The &ldquo;I forgot the WAL files exist&rdquo; backup failure</h3>
+<p><code>app.db</code>, <code>app.db-wal</code>, <code>app.db-shm</code> — three files. If you back up only the first one with a naive <code>cp</code>, you&rsquo;ll restore a database that&rsquo;s missing your last batch of writes. Litestream handles this. So does <code>sqlite3 .backup</code>. Plain <code>cp</code> does not.</p>
+<h3 id="3-the-long-writes-block-other-writes-failure">3. The &ldquo;long writes block other writes&rdquo; failure</h3>
+<p>A 30-second batch INSERT inside a transaction holds the writer lock for 30 seconds. Other writers wait. Break long writes into chunks; commit between chunks. This is the same advice as Postgres, just less hidden.</p>
+<h3 id="4-the-schema-migration-without-locking-failure">4. The &ldquo;schema migration without locking&rdquo; failure</h3>
+<p><code>ALTER TABLE</code> in SQLite has gotten dramatically better in the last few years (column rename, drop column, etc.) but it still rewrites the whole table for some operations. On a 10GB DB, that&rsquo;s not free. Test the migration on a copy of production first. Same as you&rsquo;d do with Postgres.</p>
+<h3 id="5-the-i-assumed-concurrent-writers-failure">5. The &ldquo;I assumed concurrent writers&rdquo; failure</h3>
+<p>There is one writer at a time, ever. WAL gives you concurrent reads, not concurrent writes. If you&rsquo;re running multiple processes that all write to the same DB, you need to funnel writes through one of them, or you need a different database. This is the most common reason people think &ldquo;SQLite doesn&rsquo;t scale&rdquo; — they&rsquo;re really running into single-writer.</p>
+<h2 id="when-to-use-postgres-instead">When to use Postgres instead</h2>
+<p>This list is short and important. Use Postgres if:</p>
+<ul>
+<li><strong>You need multiple writer processes across machines.</strong> Read replicas of an SQLite-backed app are doable but awkward; multi-writer is not.</li>
+<li><strong>Your hot dataset is going to be over ~100 GB.</strong> SQLite handles big files. The <em>operational</em> story for &gt;100 GB SQLite files (backup, restore, point-in-time recovery) gets uncomfortable.</li>
+<li><strong>You need server-side features that exist only in Postgres.</strong> Full-text search beyond SQLite&rsquo;s FTS5, native JSON paths beyond SQLite&rsquo;s <code>json1</code>, listen/notify, logical replication, foreign data wrappers, partitioning.</li>
+<li><strong>Your team already runs Postgres operationally.</strong> &ldquo;Boring&rdquo; is partly a measure of how familiar the operational surface is. If your ops team has a Postgres runbook for everything, picking SQLite forces them to write a new runbook for nothing.</li>
+</ul>
+<p>If none of those, SQLite is the smaller choice. Smaller choices are the ones you can change later.</p>
+<h2 id="the-migration-path">The migration path</h2>
+<p>The reason &ldquo;but what if I outgrow SQLite?&rdquo; is a smaller worry than people make it: the migration path is genuinely tractable.</p>
+<pre><code class="language-bash"># 1. Install pgloader (one apt-get).
+# 2. One command:
+pgloader sqlite:///home/app/data/app.db postgresql://user:pass@host/dbname
+# 3. Swap your sqlc target from sqlite to postgres in sqlc.yaml.
+# 4. Update your connection string.
+# 5. Re-run sqlc; build; deploy.
+</code></pre>
+<p>Why this works at all: if you&rsquo;ve been writing portable SQL through <code>sqlc</code> (or just <code>database/sql</code>) instead of an ORM, your queries are still queries. Most of them work unchanged on Postgres. The ones that don&rsquo;t are usually <code>INSERT ... ON CONFLICT</code> (slightly different syntax) and <code>AUTOINCREMENT</code> vs <code>BIGSERIAL</code>. Two days of work, not two months.</p>
+<p>This is, incidentally, why we picked sqlc over an ORM in the first place: the day you migrate is the day you get paid back for not having an abstraction.</p>
+<h2 id="what-this-looks-like-at-boringstackorg">What this looks like at boringstack.org</h2>
+<p>The backend for this site runs on SQLite + WAL + Litestream + R2 today. The shape of the operational reality, qualitatively:</p>
+<ul>
+<li>Reads from the HTTP handler are sub-millisecond at p99 — the database is a function call, not a network hop.</li>
+<li>Lock contention has not shown up in the latency graph at any point. Single writer, WAL-enabled, that&rsquo;s the contract.</li>
+<li>The R2 bill for continuous backup sits at zero — well under the free tier with normal write volumes.</li>
+<li>Restore drills run on a cadence and pass. The drill is the backup; the file is just a file.</li>
+</ul>
+<p>When any of these stops being true, it&rsquo;ll show up in a future issue with a name attached and the actual numbers on it.</p>
+<h2 id="the-deal-again">The deal, again</h2>
+<p>This is issue #3 of a weekly newsletter. One practical field note every Tuesday — what shipped, what broke, how the bill changed, which defaults held up.</p>
+<p>Next Tuesday: <strong>&ldquo;WAL mode for app builders&rdquo;</strong> — the deeper read on why WAL changes the shape of what SQLite can be in production.</p>
+<p><a href="/#newsletter">Subscribe</a> if you don&rsquo;t already. <a href="https://github.com/boringstackoverflow/boring-stack">Star the repo</a> if you&rsquo;re following along quietly. Reply with your stack — I read every reply.</p>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT / <a href="mailto:hello@boringstack.org">hello@boringstack.org</a></span>
+</footer>
+
+</body>
+</html>

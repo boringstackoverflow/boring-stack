@@ -6,7 +6,15 @@
     <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 07 May 2026 05:11:32 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 13 May 2026 04:05:31 +0000</lastBuildDate>
+    
+    <item>
+      <title>SQLite is a database. Stop apologizing.</title>
+      <link>https://boringstack.org/issues/2026-05-12-sqlite-is-a-database.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/2026-05-12-sqlite-is-a-database.html</guid>
+      <pubDate>Tue, 12 May 2026 00:00:00 +0000</pubDate>
+      <description>The full case for SQLite in production: what it actually does well, what WAL mode changes, what Litestream adds, what fails, when to switch to Postgres, and how to migrate when you do.</description>
+    </item>
     
     <item>
       <title>One VPS, one binary, one database</title>
