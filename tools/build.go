@@ -24,6 +24,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	texttemplate "text/template"
@@ -81,6 +82,21 @@ func main() {
 			log.Fatalf("%s: %v", path, err)
 		}
 		issues = append(issues, iss)
+	}
+
+	// Stabilize pubDates: preserve each issue's pubDate from the existing
+	// feed.xml so re-builds don't churn the feed. Issues new to this build
+	// get the current UTC time as their first pubDate. This is the right
+	// fix for the "auto-send dies 24h past UTC midnight" bug: a fresh issue
+	// always enters the feed with pubDate=now, not pubDate=midnight-of-date.
+	prior := loadPriorPubDates(feedPath)
+	now := time.Now().UTC().Format(time.RFC1123Z)
+	for _, iss := range issues {
+		if pd, ok := prior[iss.Slug]; ok {
+			iss.PubDate = pd
+		} else {
+			iss.PubDate = now
+		}
 	}
 
 	// Sort newest first; assign issue numbers in chronological order so
@@ -181,9 +197,30 @@ func parseIssue(path string, md goldmark.Markdown) (*Issue, error) {
 		Date:      date,
 		DateHuman: date.Format("January 2, 2006"),
 		DateISO:   date.Format("2006-01-02"),
-		PubDate:   date.UTC().Format(time.RFC1123Z),
-		HTMLBody:  template.HTML(buf.String()),
+		// PubDate intentionally left empty — assigned in main() from
+		// the existing feed.xml (preserves history) or time.Now() (new).
+		HTMLBody: template.HTML(buf.String()),
 	}, nil
+}
+
+// loadPriorPubDates reads the existing feed.xml (if present) and returns a
+// map of slug → pubDate string for every <item> it can parse. Returns nil
+// (which is fine — a nil map looks empty to callers) if the feed is missing,
+// unreadable, or has no recognizable items. Tolerant by design: any parsing
+// hiccup just means "this slug is new", which is the safe fallback.
+func loadPriorPubDates(path string) map[string]string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	re := regexp.MustCompile(
+		`<guid[^>]*>https://boringstack\.org/issues/([^<]+)\.html</guid>\s*<pubDate>([^<]+)</pubDate>`,
+	)
+	out := make(map[string]string)
+	for _, m := range re.FindAllStringSubmatch(string(data), -1) {
+		out[m[1]] = m[2]
+	}
+	return out
 }
 
 // splitFrontmatter extracts the YAML-ish block delimited by '---' lines at
