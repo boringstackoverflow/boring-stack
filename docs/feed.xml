@@ -6,7 +6,15 @@
     <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 17 May 2026 17:31:06 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 19 May 2026 22:04:28 +0000</lastBuildDate>
+    
+    <item>
+      <title>What broke in launch week</title>
+      <link>https://boringstack.org/issues/2026-05-19-what-broke-in-launch-week.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/2026-05-19-what-broke-in-launch-week.html</guid>
+      <pubDate>Tue, 19 May 2026 22:04:28 +0000</pubDate>
+      <description>From launch day until 48 hours ago, every newsletter signup on boringstack.org silently failed at the TLS edge. Lower bound: 49 attempts. Ceiling: unknowable. Here's the bug, the blast radius, the 3 PRs we shipped to fix it, and the 3 things we'd do differently.</description>
+    </item>
     
     <item>
       <title>SQLite is a database. Stop apologizing.</title>
