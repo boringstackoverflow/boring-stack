@@ -7,7 +7,7 @@
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
     <lastBuildDate>{{.BuildDate}}</lastBuildDate>
-    {{range .Issues}}
+{{range .Issues}}
     <item>
       <title>{{.Title}}</title>
       <link>https://boringstack.org/issues/{{.Slug}}.html</link>
@@ -15,6 +15,6 @@
       <pubDate>{{.PubDate}}</pubDate>
       {{if .Summary}}<description>{{.Summary}}</description>{{end}}
     </item>
-    {{end}}
+{{end}}
   </channel>
 </rss>

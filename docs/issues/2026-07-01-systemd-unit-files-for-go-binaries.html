@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>systemd unit files for Go binaries — Boring Stack</title>
+<meta name="description" content="The boring runtime for a single Go binary: one service file, restart policy, journald logs, graceful shutdown, and enough sandboxing to catch dumb mistakes without inventing a platform.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-07-01-systemd-unit-files-for-go-binaries.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="systemd unit files for Go binaries">
+<meta property="og:description" content="The boring runtime for a single Go binary: one service file, restart policy, journald logs, graceful shutdown, and enough sandboxing to catch dumb mistakes without inventing a platform.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-07-01-systemd-unit-files-for-go-binaries.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-07-01">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../"><img src="../favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="./">issues</a>
+    <a href="../#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">July 1, 2026 · issue #6</p>
+  <h1>systemd unit files for Go binaries</h1>
+  <p>A Go binary does not need an orchestrator to stay alive.</p>
+<p>It needs a process supervisor. It needs logs. It needs a restart policy. It needs a clear place for config, a clear place for data, and a way to stop without dropping every request on the floor.</p>
+<p>On a boring stack, that runtime is <code>systemd</code>.</p>
+<p>Not because systemd is elegant. It is not. It is a pile of Linux plumbing with a thousand subcommands and a reputation it partly earned. But it is already on the box, it is boring in the best way, and it does the job we actually have: run one binary until we tell it to stop.</p>
+<p>The Docker version of this article is longer. That is the problem.</p>
+<h2 id="the-boring-default">The boring default</h2>
+<p>This is the unit file Boring Stack ships for a small Go app:</p>
+<pre><code class="language-ini">[Unit]
+Description=app
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/home/deploy/app
+ExecStart=/home/deploy/app/app
+Restart=on-failure
+RestartSec=2
+
+KillSignal=SIGTERM
+TimeoutStopSec=10s
+
+LimitNOFILE=65535
+Environment=PORT=8080
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/deploy/app/data
+PrivateTmp=true
+
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+SystemCallArchitectures=native
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+<p>Install it at <code>/etc/systemd/system/app.service</code>:</p>
+<pre><code class="language-bash">sudo systemctl daemon-reload
+sudo systemctl enable --now app
+sudo systemctl status app
+journalctl -u app -f
+</code></pre>
+<p>That is the runtime.</p>
+<p>No image registry. No compose file. No sidecar. No YAML layer between &ldquo;start the app&rdquo; and &ldquo;the app is running.&rdquo;</p>
+<h2 id="what-each-line-is-buying">What each line is buying</h2>
+<p>The first useful line is <code>User=deploy</code>. Your app should not run as root. Most small-app disasters do not need a sophisticated attacker. They need one path traversal bug, one bad upload handler, or one shell command with too much permission. Run as the app user.</p>
+<p><code>WorkingDirectory=/home/deploy/app</code> gives relative paths a predictable home. Better: make your app use absolute paths for anything important, then the working directory becomes a convenience instead of a dependency.</p>
+<p><code>ExecStart=/home/deploy/app/app</code> is the whole launch command. If you cannot explain how your app starts in one line, the deploy has probably grown teeth.</p>
+<p><code>Restart=on-failure</code> is the boring babysitter. If the process panics, exits non-zero, or gets killed by a signal that counts as failure, systemd starts it again. It will not fix your bug. It will keep one crash from becoming permanent downtime.</p>
+<p><code>RestartSec=2</code> avoids a tight crash loop. Two seconds is enough to keep the box from thrashing and short enough that users probably never notice a single panic.</p>
+<p><code>KillSignal=SIGTERM</code> and <code>TimeoutStopSec=10s</code> are the graceful shutdown contract. Your Go server should listen for SIGTERM, stop accepting new requests, drain in-flight work, close the database, and exit. If it does not exit within ten seconds, systemd stops waiting.</p>
+<p><code>StandardOutput=journal</code> and <code>StandardError=journal</code> send logs to the one log store you already have. Read them with:</p>
+<pre><code class="language-bash">journalctl -u app -f
+journalctl -u app --since &quot;1 hour ago&quot;
+journalctl -u app -p warning..alert
+</code></pre>
+<p>That covers most day-one debugging. If your app is small and your logs are useful, <code>journalctl</code> is enough for a long time.</p>
+<h2 id="the-sandboxing-worth-turning-on">The sandboxing worth turning on</h2>
+<p>The unit file has a few hardening flags. They are not magic. They are cheap guardrails.</p>
+<p><code>NoNewPrivileges=true</code> prevents the process and its children from gaining new privileges through setuid binaries or file capabilities. Your web app should never need that.</p>
+<p><code>ProtectSystem=strict</code> makes most of the filesystem read-only from the process&rsquo;s point of view. This catches an entire class of dumb bugs: writing uploads into the app directory, dropping temp files into random places, or letting a bug mutate files it should only read.</p>
+<p><code>ReadWritePaths=/home/deploy/app/data</code> punches one deliberate hole in that read-only filesystem. The SQLite file lives there. Uploads can live there if they are local. Nothing else gets write access unless you name it.</p>
+<p><code>ProtectHome=read-only</code> keeps the app from writing into home directories by accident. If you need writable app state, give it a specific data directory and put that directory in <code>ReadWritePaths</code>.</p>
+<p><code>PrivateTmp=true</code> gives the service its own <code>/tmp</code>. That removes one more shared scratchpad from the system.</p>
+<p>The kernel flags are similar: do not let the web app change kernel tunables, load kernel modules, mess with control groups, create random namespaces, or run binaries for a different architecture. If your app needs any of that, you should be able to explain why in the service file.</p>
+<h2 id="the-tempting-alternative">The tempting alternative</h2>
+<p>The usual alternative is Docker Compose.</p>
+<p>For a polyglot app, Compose can be the right choice. If you have a Go API, a Python worker, a Node frontend build server, Redis, and a Postgres container, Compose gives those pieces a shared shape.</p>
+<p>For one static Go binary, it mostly adds a container runtime, an image build, a registry or image transfer step, another log command, another restart policy, another network layer, and another file to debug when the app is down.</p>
+<p>That can be fine. It is not free.</p>
+<p>The boring question is simple: what does the container buy this app today?</p>
+<p>If the answer is &ldquo;reproducible builds,&rdquo; solve that with a pinned Go version and a build script first. If the answer is &ldquo;isolation,&rdquo; read the hardening flags above again. If the answer is &ldquo;team standard,&rdquo; fine. Team standard is a real reason. Just write it down.</p>
+<h2 id="what-breaks">What breaks</h2>
+<p>Three things usually bite small systemd deployments.</p>
+<p>First: the app cannot read its config. The service environment is not your shell. If the app needs <code>DATABASE_PATH</code>, <code>PORT</code>, or <code>APP_ENV</code>, put it in the unit file or an <code>EnvironmentFile=</code> with locked-down permissions.</p>
+<p>Second: the app cannot write the database. That is usually <code>ProtectSystem=strict</code> doing its job. Fix the path, not the policy. Put the database under <code>/home/deploy/app/data</code>, make the directory owned by the service user, and name it in <code>ReadWritePaths</code>.</p>
+<p>Third: restart loops hide the first failure. <code>systemctl status app</code> shows you the current state. <code>journalctl -u app --since &quot;10 minutes ago&quot;</code> shows you the story. Read the first error, not the tenth restart.</p>
+<h2 id="when-this-stops-being-enough">When this stops being enough</h2>
+<p>Use something heavier when the shape changes.</p>
+<p>If you have multiple services with conflicting runtimes, Compose can be useful. If you have many teams deploying independently, an orchestrator starts making sense. If you need rolling deploys across a fleet, a single service file is no longer the whole runtime.</p>
+<p>But do not borrow that complexity on day one.</p>
+<p>The migration path is boring: keep the Go binary, keep the HTTP port, keep Caddy in front, and move the process boundary later. A systemd service can become a container. A container can move behind a load balancer. Nothing about the first version prevents the second.</p>
+<h2 id="this-weeks-receipt">This week&rsquo;s receipt</h2>
+<p>The repo now ships the actual template at <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/app.service"><code>templates/app.service</code></a>. It is not a gist. It is part of the stack contract.</p>
+<p>If the template is wrong, the project is wrong. Open an issue. Send the flag that bit you. The goal is not to worship systemd; the goal is to have a service file a tired builder can read at 2am and still make the right change.</p>
+<h2 id="the-deal-again">The deal, again</h2>
+<p>This is issue #6. Next up: the single Go binary deploy — build, copy, swap, restart, smoke test. The whole deploy path should fit on a postcard, and every extra line has to earn rent.</p>
+<p>Boring is not old. Boring is the part of the system you can explain when the page goes off.</p>
+<p><a href="https://github.com/boringstackoverflow/boring-stack">Star the repo</a>. Try the <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/app.service"><code>app.service</code></a> template on a small app. Reply with the line you had to change first.</p>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT / <a href="mailto:hello@boringstack.org">hello@boringstack.org</a></span>
+</footer>
+
+</body>
+</html>

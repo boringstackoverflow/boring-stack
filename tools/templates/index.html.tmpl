@@ -35,13 +35,13 @@
 
 <section>
   <ol class="issue-list">
-    {{range .Issues}}
+{{range .Issues}}
     <li>
       <a href="{{.Slug}}.html"><strong>{{.Title}}</strong></a>
       <span class="issue-meta">{{.DateHuman}} · issue #{{.Number}}</span>
       {{if .Summary}}<p class="issue-summary">{{.Summary}}</p>{{end}}
     </li>
-    {{end}}
+{{end}}
   </ol>
 </section>
 
