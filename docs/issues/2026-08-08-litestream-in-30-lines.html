@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Litestream in 30 lines — Boring Stack</title>
+<meta name="description" content="The backup layer for a single SQLite file: one config file, one systemd unit, continuous replication to Cloudflare R2, and a restore command you should run before you need it. Eleven lines of actual configuration.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-08-08-litestream-in-30-lines.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Litestream in 30 lines">
+<meta property="og:description" content="The backup layer for a single SQLite file: one config file, one systemd unit, continuous replication to Cloudflare R2, and a restore command you should run before you need it. Eleven lines of actual configuration.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-08-08-litestream-in-30-lines.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-08-08">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../"><img src="../favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="./">issues</a>
+    <a href="../#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">August 8, 2026 · issue #7</p>
+  <h1>Litestream in 30 lines</h1>
+  <p>A SQLite database is a file. That is the best thing about it and the scariest thing about it.</p>
+<p>The best thing, because backing up a file is a solved problem. The scariest thing, because &ldquo;it&rsquo;s just a file&rdquo; is exactly what people say right before they copy it while it&rsquo;s being written to and get a corrupted snapshot they don&rsquo;t discover for six weeks.</p>
+<p>The boring answer is Litestream. It is a separate process that watches your SQLite WAL and streams frames to object storage, continuously, while the app runs. Your app does not change. Your code does not import anything. You do not add a backup endpoint or a cron job that shells out to <code>sqlite3 .backup</code>.</p>
+<p>You add one config file and one service file.</p>
+<h2 id="the-boring-default">The boring default</h2>
+<p>This is <code>templates/litestream.yml</code>, shipped in the repo:</p>
+<pre><code class="language-yaml">dbs:
+  - path: /home/deploy/app/data/app.db
+
+    snapshot-interval: 1h
+    retention: 168h
+
+    replicas:
+      - type: s3
+        endpoint: https://&lt;account&gt;.r2.cloudflarestorage.com
+        bucket: app-backups
+        path: app.db
+        access-key-id: ${R2_KEY}
+        secret-access-key: ${R2_SECRET}
+</code></pre>
+<p>That is eleven lines of actual configuration. The file in the repo is thirty-three, and the other twenty-two are comments explaining the two numbers you might want to change.</p>
+<p>The service file is the same shape as the app&rsquo;s:</p>
+<pre><code class="language-ini">[Service]
+Type=simple
+ExecStart=/usr/bin/litestream replicate -config /etc/litestream.yml
+Restart=always
+RestartSec=5
+
+KillSignal=SIGTERM
+TimeoutStopSec=10s
+LimitNOFILE=4096
+
+EnvironmentFile=/etc/litestream.env
+</code></pre>
+<p>Install both, then:</p>
+<pre><code class="language-bash">sudo systemctl daemon-reload
+sudo systemctl enable --now litestream
+journalctl -u litestream -f
+</code></pre>
+<p>Your database now has an off-box copy that is seconds old.</p>
+<h2 id="what-the-two-numbers-buy">What the two numbers buy</h2>
+<p><code>snapshot-interval: 1h</code> is how often Litestream writes a full snapshot instead of another WAL frame. The default is 24h. Snapshots make restores faster, because a restore replays every frame since the last snapshot — a 24-hour gap means replaying up to 24 hours of writes. They also cost storage, because each snapshot is a full copy of the database.</p>
+<p>An hour is the middle. If your database is 50 MB and mostly idle, 24h is fine and cheaper. If it takes writes all day, an hour keeps restore time short enough that you don&rsquo;t dread it.</p>
+<p><code>retention: 168h</code> is seven days. After that, older snapshots and frames get pruned. The default is 24h, which is enough to survive a hardware failure and not enough to survive a bad migration you didn&rsquo;t notice until Thursday. Seven days gives you room to roll back from your own mistakes, which are more common than dead disks.</p>
+<p>Those two lines are the whole tuning surface. That is the point.</p>
+<h2 id="restore-is-the-feature">Restore is the feature</h2>
+<p>Replication is not the feature. Restore is the feature. Replication is the tax you pay to have one.</p>
+<pre><code class="language-bash">litestream restore -config /etc/litestream.yml \
+  -o /tmp/restored.db /home/deploy/app/data/app.db
+
+sqlite3 /tmp/restored.db &quot;pragma integrity_check;&quot;
+sqlite3 /tmp/restored.db &quot;select count(*) from your_busiest_table;&quot;
+</code></pre>
+<p>Three commands. The first pulls the database down. The second asks SQLite whether the file is coherent. The third asks you whether the data is actually there, which <code>integrity_check</code> will never tell you — a perfectly intact database with zero rows passes integrity checks with a cheerful <code>ok</code>.</p>
+<p>Run this on a laptop. Run it against production storage. It costs nothing, because R2 does not charge for egress, which is the single most underrated line on the bill we published in <a href="https://boringstack.org/issues/2026-05-30-the-cloud-bill-is-an-architecture-review.html">issue #5</a>. The reason most backup setups quietly rot is that testing them costs money or attention. When the test is free and fits on one screen, you run it.</p>
+<p>If you have never run that command against your own backups, you do not have backups. You have a configuration file that expresses an intention.</p>
+<h2 id="the-honest-note">The honest note</h2>
+<p>This site&rsquo;s own backend does not run Litestream.</p>
+<p>We wrote that down in issue #5 and it is still true. <code>boringstack.org</code>&rsquo;s API shares a VPS with <code>borela.dev</code>, and <code>borela-agent</code> was already snapshotting to R2 on that box, so adding a second project block to a running agent beat standing up a parallel service. The bill bends to what is already on the machine.</p>
+<p>The OSS skill still defaults to Litestream for fresh projects, and the templates above are the ones it writes. But you should know which parts of this newsletter are field reports and which parts are the recommended default, and this one is the recommended default. When those two things diverge, we will keep saying so.</p>
+<h2 id="what-breaks">What breaks</h2>
+<p><strong>The database is not in WAL mode.</strong> Litestream replicates WAL frames. No WAL, nothing to replicate. <code>pragma journal_mode=wal;</code> once, at startup, forever.</p>
+<p><strong>Two Litestream processes on one database.</strong> Don&rsquo;t. Litestream assumes it owns the replication position for a given database. Running a second one against the same file — a leftover from testing, a copy of the unit file with a different name — produces a replica that looks healthy and restores wrong.</p>
+<p><strong>Secrets in the config file.</strong> <code>${R2_KEY}</code> reads from the environment, and <code>EnvironmentFile=/etc/litestream.env</code> is mode 0600, root-only. If you paste your R2 keys directly into <code>litestream.yml</code>, they are now in whatever backup captured that config, and probably in a git repo.</p>
+<p><strong>Silence that looks like success.</strong> <code>systemctl status litestream</code> says <code>active (running)</code> whether it is replicating or failing every attempt against a bucket that no longer exists. <code>journalctl -u litestream --since &quot;1 hour ago&quot;</code> is the actual health check. Better: restore, on a schedule.</p>
+<h2 id="when-this-stops-being-enough">When this stops being enough</h2>
+<p>Litestream is disaster recovery, not high availability. It gives you a recent copy somewhere else. It does not give you failover, and it does not give you read replicas you can serve traffic from.</p>
+<p>If you need a warm standby that takes over in seconds, you have outgrown this — look at litestream&rsquo;s <code>live read replica</code> mode, or accept that you are in Postgres territory now. If your restore window is longer than your business can survive, the fix is not a bigger <code>retention</code> value; it is a second machine.</p>
+<p>The migration path stays boring. Keep the SQLite file. Add the second replica — the template ships a commented-out Backblaze B2 block for cross-provider redundancy, because &ldquo;all my backups are at one vendor&rdquo; is a real failure mode. Then, if you actually need it, move to a database with replication built in. Nothing about this setup blocks that.</p>
+<h2 id="this-weeks-receipt">This week&rsquo;s receipt</h2>
+<p>The repo ships both files: <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/litestream.yml"><code>templates/litestream.yml</code></a> and <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/litestream.service"><code>templates/litestream.service</code></a>. Same contract as <code>app.service</code> — if the template is wrong, the project is wrong, so open an issue.</p>
+<h2 id="the-deal-again">The deal, again</h2>
+<p>This is issue #7, and it is late. Issue #5 promised a restore drill &ldquo;next Tuesday.&rdquo; That was ten weeks ago. Issue #6 promised the deploy script and then went quiet for five.</p>
+<p>So: no promise this week, just a debt. The restore drill is the next issue. Pulling a real database out of R2 onto a fresh box, with a stopwatch, and publishing the number even if the number is embarrassing. It has been scheduled twice and skipped twice, and a newsletter about backups that will not test its own backups is just content.</p>
+<p>Boring is not effortless. Boring is <em>the small set of things you can still do correctly when you are tired.</em></p>
+<p><a href="https://github.com/boringstackoverflow/boring-stack">Star the repo</a>. Run the restore command against your own backups tonight. Reply with how long it took — I will publish the range, including mine.</p>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT / <a href="mailto:hello@boringstack.org">hello@boringstack.org</a></span>
+</footer>
+
+</body>
+</html>

@@ -6,7 +6,15 @@
     <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 01 Jul 2026 19:19:50 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 08 Aug 2026 21:47:06 +0000</lastBuildDate>
+
+    <item>
+      <title>Litestream in 30 lines</title>
+      <link>https://boringstack.org/issues/2026-08-08-litestream-in-30-lines.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/2026-08-08-litestream-in-30-lines.html</guid>
+      <pubDate>Sat, 08 Aug 2026 21:47:06 +0000</pubDate>
+      <description>The backup layer for a single SQLite file: one config file, one systemd unit, continuous replication to Cloudflare R2, and a restore command you should run before you need it. Eleven lines of actual configuration.</description>
+    </item>
 
     <item>
       <title>systemd unit files for Go binaries</title>
