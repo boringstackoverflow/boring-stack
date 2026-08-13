@@ -18,7 +18,8 @@ echo "→ upload"
 scp -q app "$HOST:$REMOTE/app.new"
 
 echo "→ swap + restart (keeps app.prev for rollback)"
-ssh "$HOST" "cd $REMOTE && cp -f app app.prev 2>/dev/null || true; \
+ssh "$HOST" "cd $REMOTE && \
+             { if [ -f app ]; then cp -f app app.prev; fi; } && \
              mv app.new app && sudo systemctl restart app"
 
 echo "→ health check (5 retries, 2s apart)"

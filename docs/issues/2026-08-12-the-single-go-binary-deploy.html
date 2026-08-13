@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The single Go binary deploy — Boring Stack</title>
+<meta name="description" content="Build one Linux binary, copy it over SSH, swap it atomically, restart systemd, and roll back when the health check fails. The entire release path is 26 executable lines.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-08-12-the-single-go-binary-deploy.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="The single Go binary deploy">
+<meta property="og:description" content="Build one Linux binary, copy it over SSH, swap it atomically, restart systemd, and roll back when the health check fails. The entire release path is 26 executable lines.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-08-12-the-single-go-binary-deploy.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-08-12">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../"><img src="../favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="./">issues</a>
+    <a href="../#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">August 12, 2026 · issue #8</p>
+  <h1>The single Go binary deploy</h1>
+  <p>A deploy does not have to be a platform.</p>
+<p>For one Go app on one VPS, it can be one artifact crossing one SSH connection. Build the binary, copy it beside the running binary, rename it into place, restart the service, and ask the public URL whether it came back.</p>
+<p>That is the whole path. The production-minded version in this repo is <strong>37 lines total, 26 executable</strong>. The extra lines buy version stamping, five health-check attempts, and automatic rollback.</p>
+<h2 id="the-deploy">The deploy</h2>
+<p>Comments removed, this is <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/deploy.sh"><code>templates/deploy.sh</code></a>:</p>
+<pre><code class="language-bash">set -euo pipefail
+
+HOST=${HOST:-deploy@your-vps.example.com}
+REMOTE=${REMOTE:-/home/deploy/app}
+HEALTHZ_URL=${HEALTHZ_URL:-https://your-domain.example.com/healthz}
+SHA=$(git rev-parse --short HEAD 2&gt;/dev/null || echo dev)
+
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+  go build -trimpath -ldflags=&quot;-s -w -X main.version=$SHA&quot; -o app .
+
+scp -q app &quot;$HOST:$REMOTE/app.new&quot;
+
+ssh &quot;$HOST&quot; &quot;cd $REMOTE &amp;&amp; \
+  { if [ -f app ]; then cp -f app app.prev; fi; } &amp;&amp; \
+  mv app.new app &amp;&amp; sudo systemctl restart app&quot;
+
+for i in 1 2 3 4 5; do
+  sleep 2
+  if curl -fsS --max-time 3 &quot;$HEALTHZ_URL&quot; &gt;/dev/null 2&gt;&amp;1; then
+    echo &quot;live: $SHA&quot;
+    exit 0
+  fi
+done
+
+ssh &quot;$HOST&quot; &quot;cd $REMOTE &amp;&amp; mv app.prev app &amp;&amp; sudo systemctl restart app&quot;
+exit 1
+</code></pre>
+<p>There is no image, registry, release service, remote build, or deployment agent. Your laptop needs Go, SSH, and curl. The server needs systemd and permission for the deploy user to restart one service.</p>
+<h2 id="build-once">Build once</h2>
+<p><code>GOOS=linux GOARCH=amd64</code> builds for the VPS instead of whatever machine you are sitting at. <code>CGO_ENABLED=0</code> keeps the result self-contained when your dependencies permit it. Copy that file to a fresh Ubuntu box and it runs without installing Go.</p>
+<p><code>-trimpath</code> removes local source paths. <code>-s -w</code> strips debug tables to make the upload smaller. <code>-X main.version=$SHA</code> puts the Git commit into the binary, assuming the app exposes a <code>main.version</code> variable. A <code>/version</code> endpoint or startup log can then answer the most useful deploy question: <em>what code is actually running?</em></p>
+<p>If you need CGO—SQLite drivers based on <code>mattn/go-sqlite3</code> are the common reason—cross-compilation needs a Linux C toolchain. The boring alternatives are to build on Linux in CI or use a pure-Go SQLite driver. Do not discover this for the first time during a production deploy.</p>
+<h2 id="never-overwrite-the-running-binary">Never overwrite the running binary</h2>
+<p>The upload goes to <code>app.new</code>, not <code>app</code>.</p>
+<p>Uploading directly onto the live path can fail with <code>text file busy</code> while the process is running. If the old process is stopped, an interrupted transfer can instead leave a partial executable at the path systemd expects. Neither is an interesting failure mode.</p>
+<p><code>mv app.new app</code> is atomic when both files are on the same filesystem. Observers see the old file or the new file, never half of either. The currently running process also keeps using the old inode until systemd stops it, so replacing the path does not mutate the code already in memory.</p>
+<p>Before the swap, <code>cp app app.prev</code> keeps one rollback target. This is not release history. It is enough to answer, “the new binary is broken; put back the one that was running two minutes ago.” Git remains the history.</p>
+<p>The SQLite database is not part of this swap. That is deliberate—and it is why schema migrations must be backward-compatible with the previous binary if you expect automatic rollback to work. A binary rollback cannot undo a destructive migration.</p>
+<h2 id="restart-check-roll-back">Restart, check, roll back</h2>
+<p><code>systemctl restart app</code> gives the old process its SIGTERM window, then starts the new file at the same path. Caddy stays up. During the gap, requests can receive a 502. For a small app, that brief interruption is often an honest trade for a deploy path one person can understand completely.</p>
+<p>The script waits two seconds and calls the public HTTPS health endpoint. Public matters: checking <code>localhost:8080</code> proves the process is listening, but not that Caddy routing, DNS, or TLS still works. We have already shipped that exact mistake.</p>
+<p>Five attempts tolerate a slow startup. If all five fail, the script restores <code>app.prev</code>, restarts again, and exits non-zero. A failed deploy should be loud and should leave the last known binary running.</p>
+<p>A useful <code>/healthz</code> checks that the process can serve requests and open its database. It should not call every external dependency. If Resend is down, your application may still be healthy enough to accept signups and queue mail for later.</p>
+<h2 id="what-this-does-not-solve">What this does not solve</h2>
+<p>This is not zero-downtime deployment. It does not coordinate ten servers, drain a load balancer, approve releases, retain twenty artifacts, or undo database migrations. It assumes one operator, one host, one service, and a few seconds of acceptable disruption.</p>
+<p>When those assumptions stop being true, add the missing property—not a platform-shaped bundle of properties you do not need. Run two ports behind Caddy for zero downtime. Put versioned binaries in object storage for longer rollback history. Add CI when more than one person ships. Move to an orchestrator when you have a fleet worth orchestrating.</p>
+<p>Keep the artifact. A Go binary that works under systemd also works in a container later. Starting without the container does not close that door.</p>
+<h2 id="this-weeks-receipt">This week&rsquo;s receipt</h2>
+<p>The complete script is in <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/deploy.sh"><code>templates/deploy.sh</code></a>. Copy it, change three variables, and read every line before giving the deploy user permission to restart the service.</p>
+<p>This is issue #8. Issue #7 said the restore drill would be next. We changed the order to clear the deploy-script promise from issue #6 first. The restore drill is still owed; changing the calendar does not make the debt disappear.</p>
+<p>What is the smallest deploy script you actually trust—and which failure made its least obvious line necessary?</p>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT / <a href="mailto:hello@boringstack.org">hello@boringstack.org</a></span>
+</footer>
+
+</body>
+</html>
