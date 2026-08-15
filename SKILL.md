@@ -1,6 +1,6 @@
 ---
 name: boring-stack
-description: Bootstraps new web app projects with a tech stack you can understand. Runs a 4-question intake to pick a stack (Go binary + SQLite + Litestream + Caddy + systemd + a $5 VPS by default; Postgres / managed platforms when the project doesn't fit), writes STACK.md as the source-of-truth decision record plus a CLAUDE.md anchor, scaffolds new projects from scratch (`init`), generates production-ready deploy files from bundled templates, and walks an 8-step post-deploy verification (TLS / Litestream / restore drill). Loads when starting a new web app, scaffolding deploy infrastructure, picking a tech stack, or making bootstrap-time architecture decisions for a side project, indie product, internal tool, hobby project, or solo-founder context.
+description: Bootstraps new web app projects with a tech stack you can understand. Runs a 5-question intake to pick a stack (Go binary + SQLite + Litestream + Caddy + systemd + a $5 VPS by default; Postgres / managed platforms when the project doesn't fit), writes STACK.md as the source-of-truth decision record plus an agent-instructions anchor, scaffolds new projects with `boringstack new` or `boringstack init`, generates production-ready deploy files from bundled templates, and walks an 8-step post-deploy verification (TLS / Litestream / restore drill). Loads when starting a new web app, scaffolding deploy infrastructure, picking a tech stack, or making bootstrap-time architecture decisions for a side project, indie product, internal tool, hobby project, or solo-founder context.
 ---
 
 # /boring-stack
@@ -19,7 +19,7 @@ The skill is for the bootstrap moment of a new project. Triggers:
 - User asks "how do I deploy this" for something that fits the archetype: single region, small data, can be paged when broken.
 - User invokes `/boring-stack` directly.
 
-After bootstrap, the skill steps back. The artifacts it writes (STACK.md, the CLAUDE.md anchor, the templates) keep working without it.
+After bootstrap, the skill steps back. The artifacts it writes (STACK.md, the agent-instructions anchor, and the templates) keep working without it.
 
 ## When NOT to use this skill
 
@@ -124,7 +124,7 @@ Still write `STACK.md`. Note the actual chosen stack and the reason. The anchor 
 
 ## Stack choices, explained
 
-The 4-question intake maps to specific defaults. The five sections below explain *why* each default — what it trades, when it stops fitting, and what the migration looks like if the project outgrows it.
+The 5-question intake maps to specific defaults. The six sections below explain *why* each default — what it trades, when it stops fitting, and what the migration looks like if the project outgrows it.
 
 When the user is undecided between the boring default and a more conventional choice, present the trade-off in two sentences plus a question. The rhythm: name the trade-off, name the migration path, ask what fits their project. Always defer to their call. Never refuse.
 
@@ -223,7 +223,7 @@ You don't have to enumerate all 7 every time. The pattern:
 3. If a trigger fires, fold the principle into the response BEFORE sending — either as a trade-off note (two sentences + question) or as a STACK.md update suggestion.
 4. If no trigger fires, send.
 
-This is a cheap pass, not a chore. The bootstrap skill earns its keep by leaving artifacts (STACK.md, the CLAUDE.md anchor) that keep these defaults visible later, without re-running the intake.
+This is a cheap pass, not a chore. The bootstrap skill earns its keep by leaving artifacts (STACK.md and the agent-instructions anchor) that keep these defaults visible later, without re-running the intake.
 
 ### When the principles conflict with the user
 
@@ -257,106 +257,57 @@ The templates have already been production-hardened. You don't need to add HSTS 
 
 ### Project init (scaffolding from scratch)
 
-When the user asks "scaffold a new boring-stack project" / "initialize this directory" / `/boring-stack init`, generate a complete starting point in one pass. Don't ask 12 follow-up questions; pick sensible boring defaults and let the user tweak.
+When the user asks "scaffold a new boring-stack project", "initialize this
+directory", or gives a product prompt such as "build me an expense tracker
+using Boring Stack", use the installed CLI as the canonical starting point:
+
+```sh
+# A new child directory:
+boringstack new myapp
+
+# An existing empty workspace (a .git directory is okay):
+boringstack init --name myapp
+```
+
+If `boringstack` is not installed, use the file contract below as the fallback
+and tell the user that re-running the installer adds the CLI. Do not maintain a
+different agent-only scaffold.
+
+After scaffolding, implement the product-specific vertical slice the user
+asked for. For an expense tracker, that means the expense schema, sqlc queries,
+handlers, templates, validation, and tests — not merely renaming the welcome
+page. Do not silently invent authentication, teams, billing, or uploads unless
+the requirements call for them.
 
 **The scaffold creates:**
 
-1. **`go.mod`** — module name from the directory name (or a placeholder `github.com/USER/REPO` the user can `sed` later).
-2. **`main.go`** — minimal HTTP server with `/`, `/healthz`, and `/static/`, embedding templates and assets via `embed.FS`. About 60 lines, including graceful shutdown. Includes a `version` ldflag hook so `deploy.sh`'s `-X main.version=$SHA` works out of the box.
+1. **`go.mod`** — module name from the directory name, or the explicit `--module` value.
+2. **`main.go` + `main_test.go`** — minimal HTTP server with `/`, `/healthz`, and `/static/`, embedding templates and assets via `embed.FS`. Includes graceful shutdown, structured logging, and a `version` ldflag hook so `deploy.sh`'s `-X main.version=$SHA` works out of the box.
 3. **`templates/index.html.tmpl`** — minimal Go html/template layout copied from `templates/index.html.tmpl`. Loads `static/app.css` (cache-busted with `?v=<Version>`) and htmx from a pinned unpkg URL. The starting point for every page.
 4. **`static/`** directory containing the starter stylesheet:
    - `app.css` — ~50 lines, modern CSS, no framework. Edit freely.
    - htmx is loaded from the CDN by default (`https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js`). To self-host, download the file into `static/htmx.min.js` and update the script tag — the template comment explains how.
 5. **`internal/`** directory with a `.gitkeep` — establishes the package-boundary pattern (per the trade-off in §5) before anyone reaches for microservices.
-6. **`data/`** directory with a `.gitkeep` and a `.gitignore` line — where SQLite + Litestream's local state will live; never committed.
-7. **`deploy/`** directory containing the templates copied from `templates/`:
+6. **`migrations/`** directory with a `.gitkeep` — append-only SQLite migrations go here when persistence is added.
+7. **`data/`** directory with a `.gitkeep` and a `.gitignore` line — where SQLite + Litestream's local state will live; never committed.
+8. **`deploy/`** directory containing the templates copied from `templates/`:
    - `deploy.sh` (chmod +x), `Caddyfile`, `app.service`, `litestream.service`, `litestream.yml`
    - **A `README.md` in `deploy/`** explaining what each file is and which placeholders to swap (host, domain, R2 account ID, bucket name).
-8. **`STACK.md`** — emit per the "Picking the stack" section above (or skip if the user hasn't decided yet and tell them to run the intake). Record the frontend tier from Q5.
-9. **`CLAUDE.md`** — append (or create with) the stickiness anchor pointing at `STACK.md` and `/boring-stack`.
-10. **`.gitignore`** — entries for `app`, `app.new`, `app.prev`, `data/`, `*.db`, `*.db-wal`, `*.db-shm`, `.env`, `*.tar.gz`.
-11. **`README.md`** — short, with a "Run locally" + "Deploy" + "Stack" section (the last one links to `STACK.md` and the manifesto).
+9. **`Makefile`** — small `run`, `build`, and `test` targets.
+10. **`STACK.md`** — emit per the "Picking the stack" section above. The neutral CLI scaffold records the boring defaults; update it after the intake if the user's answers change them. Record the frontend tier from Q5.
+11. **`AGENTS.md`** — the portable stickiness anchor pointing at `STACK.md` and the Boring Stack rules.
+12. **`.gitignore`** — entries for `app`, `app.new`, `app.prev`, `data/`, `*.db`, `*.db-wal`, `*.db-shm`, `.env`, `*.tar.gz`.
+13. **`README.md`** — short, with a "Run locally" + "Deploy" + "Stack" section (the last one links to `STACK.md` and the manifesto).
 
-**The minimal `main.go` should look like this** (roughly — adapt for actual module name + any flags the user mentioned):
+The source of truth for the exact files is `scaffold/base/` plus the canonical
+files under `templates/`. The CLI renders them, then runs `go fmt`, `go test`,
+and `go build`. Do not paste a second `main.go` recipe into this skill: changes
+belong in the scaffold and its generated-project tests.
 
-```go
-package main
-
-import (
-    "context"
-    "embed"
-    "html/template"
-    "io/fs"
-    "log/slog"
-    "net/http"
-    "os"
-    "os/signal"
-    "syscall"
-    "time"
-)
-
-var version = "dev" // set via -ldflags "-X main.version=$SHA"
-
-//go:embed templates/*.html.tmpl
-var templatesFS embed.FS
-
-//go:embed static
-var staticFS embed.FS
-
-var tmpl = template.Must(template.ParseFS(templatesFS, "templates/*.html.tmpl"))
-
-func main() {
-    log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-    mux := http.NewServeMux()
-
-    mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
-        w.Header().Set("Content-Type", "text/plain")
-        _, _ = w.Write([]byte("ok " + version + "\n"))
-    })
-
-    static, _ := fs.Sub(staticFS, "static")
-    mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(static))))
-
-    mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-        if r.URL.Path != "/" {
-            http.NotFound(w, r)
-            return
-        }
-        w.Header().Set("Content-Type", "text/html; charset=utf-8")
-        _ = tmpl.ExecuteTemplate(w, "index.html.tmpl", map[string]any{"Version": version})
-    })
-
-    srv := &http.Server{
-        Addr:              ":" + envOr("PORT", "8080"),
-        Handler:           mux,
-        ReadHeaderTimeout: 10 * time.Second,
-    }
-
-    ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-    defer stop()
-
-    go func() {
-        log.Info("listening", slog.String("addr", srv.Addr), slog.String("version", version))
-        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-            log.Error("listen", slog.Any("err", err))
-            stop()
-        }
-    }()
-    <-ctx.Done()
-    shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
-    _ = srv.Shutdown(shutdownCtx)
-}
-
-func envOr(k, d string) string {
-    if v := os.Getenv(k); v != "" {
-        return v
-    }
-    return d
-}
-```
-
-This is the minimum viable boring-stack web app: a server-rendered index page, htmx ready to go, static assets cached by Caddy, `/healthz` for the deploy script. SQLite, Litestream, the actual feature code, and any external integrations get added when the user asks for them — not pre-installed. The principle: ship what's needed, nothing more.
+The result is the minimum viable Boring Stack web app: a server-rendered page,
+htmx ready to go, embedded static assets, and `/healthz` for deployment.
+SQLite, an actual schema, sqlc output, and external integrations are added when
+the product requires them — not pre-installed in every neutral project.
 
 ### Server bring-up sequence (for a fresh VPS)
 
@@ -367,13 +318,13 @@ When the user is bringing up a new VPS, walk them through this order:
 3. **Install Litestream**: from litestream.io (deb or direct binary). Drop `templates/litestream.yml` to `/etc/litestream.yml`. Create `/etc/litestream.env` with `R2_KEY=...` and `R2_SECRET=...`, `chmod 600 /etc/litestream.env`. Drop `templates/litestream.service` to `/etc/systemd/system/litestream.service`. `systemctl enable --now litestream`.
 4. **Install app systemd unit**: drop `templates/app.service` to `/etc/systemd/system/app.service`. `systemctl daemon-reload && systemctl enable app` (don't start it yet, no binary to run).
 5. **Allow `deploy` to restart the app without password**: add to `/etc/sudoers.d/deploy`: `deploy ALL=(ALL) NOPASSWD: /bin/systemctl restart app`. `chmod 440 /etc/sudoers.d/deploy`.
-6. **First deploy**: from the dev machine, run `./deploy.sh`. It builds the binary, ships it, starts the app, and verifies health.
+6. **First deploy**: from the dev machine, run `boringstack deploy --host deploy@your-vps --healthz https://your-domain.example.com/healthz`. The CLI validates the target and executes the checked-in `deploy/deploy.sh`, which builds the binary, ships it, starts the app, and verifies health.
 
 The user can do this in 15 minutes the first time, 5 minutes once they've done it once.
 
 ### Verifying a fresh deploy (post-deploy checklist)
 
-When the user runs `./deploy.sh` for the first time on a new VPS — or when they ask "did it actually work?" / `/boring-stack verify-deploy` — walk this checklist. The deploy script's own healthz check covers (1); the rest is what the script can't see.
+When the user runs `boringstack deploy` (or `deploy/deploy.sh` directly) for the first time on a new VPS — or when they ask "did it actually work?" / `/boring-stack verify-deploy` — walk this checklist. The deploy script's own healthz check covers (1); the rest is what the script can't see.
 
 Each step has a one-liner the user (or you, via Bash) can run.
 

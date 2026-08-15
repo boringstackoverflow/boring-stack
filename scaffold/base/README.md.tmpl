@@ -1,0 +1,38 @@
+# __PROJECT_NAME__
+
+A small web app bootstrapped with [Boring Stack](https://boringstack.org/).
+
+## Run locally
+
+```sh
+boringstack dev
+```
+
+Or run Go directly:
+
+```sh
+go run .
+```
+
+Open <http://localhost:8080>. Health check: <http://localhost:8080/healthz>.
+
+## Test
+
+```sh
+go test ./...
+```
+
+## Deploy
+
+Review `deploy/README.md`, prepare a VPS, then run:
+
+```sh
+boringstack doctor --deploy
+boringstack deploy --host deploy@your-vps.example.com \
+  --healthz https://your-domain.example.com/healthz
+```
+
+## Stack
+
+The decisions and migration paths are recorded in [STACK.md](STACK.md). The
+defaults come from the [Boring Stack manifesto](https://boringstack.org/manifesto.html).

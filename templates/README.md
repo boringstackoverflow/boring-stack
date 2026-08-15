@@ -16,7 +16,7 @@ Production-hardened reference configs the `/boring-stack` skill ships with. Each
 
 | File | Purpose |
 |---|---|
-| `index.html.tmpl` | Minimal Go `html/template` page. Loads `static/app.css` and htmx from a pinned unpkg URL. Cache-busted via the `Version` field set in `main.go`. |
+| `index.html.tmpl` | Minimal Go `html/template` page. Receives `ProjectName` and `Version`, loads `static/app.css`, and loads htmx from a pinned unpkg URL. `Version` cache-busts the stylesheet. |
 | `static/app.css` | Starter stylesheet (~50 lines, modern CSS, no framework). Edit freely — it's a starting point, not a UI kit. |
 
 The frontend starter follows the boring-stack default: server-rendered HTML + htmx (the Go-shaped equivalent of Rails Hotwire). One `<script>` tag, no `node_modules`, no build step. See SKILL.md §6 ("Server-rendered HTML + htmx over SPA frameworks") for the full trade-off and the three-tier staging (Stage 1 here; Stage 2 adds an embedded Preact+HTM widget for one rich page; Stage 3 adds a chosen SPA toolchain for genuinely SPA-shaped products while keeping the backend boring).

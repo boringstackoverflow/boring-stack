@@ -1,0 +1,10 @@
+app
+app.new
+app.prev
+data/*
+!data/.gitkeep
+*.db
+*.db-wal
+*.db-shm
+.env
+*.tar.gz
