@@ -1,6 +1,6 @@
 # Boring Stack
 
-An AI coding skill, reference templates, and a builder movement for making web apps the boring way.
+A project generator, AI coding skill, reference templates, and builder movement for making web apps the boring way.
 
 [Borela](https://borela.dev/) is live: a babysitter service for web apps running on the boring stack. Its full cloud control plane (marketing, magic-link auth, dashboard, locked v1 protocol, dev mailer) runs for under $8 a month: one Go binary, one SQLite file, Litestream replicating to Cloudflare R2, Caddy fronting it, systemd running it, a $5 Hetzner VPS hosting it.
 
@@ -8,7 +8,8 @@ This repo is the open-source part that makes AI coding tools do the same by defa
 
 ## What's in the box
 
-- **`/boring-stack`**: an AI coding skill that bootstraps a new side project with the boring stack. Runs a 4-question intake, picks a tech stack that fits, writes the decision to `STACK.md`, scaffolds the code, and generates the deploy files. Surfaces trade-offs (SQLite vs Postgres, VPS vs Vercel, systemd vs Docker, monolith vs microservices) as two-sentence-plus-question notes. Always defers to your call.
+- **`boringstack new myapp`**: a small Go CLI that creates and verifies a runnable web app, including tests, stack decisions, and the production deploy templates. `dev`, `doctor`, and `deploy` keep the path from local page to prepared VPS concrete.
+- **`/boring-stack`**: an AI coding skill that bootstraps a new app with the same scaffold. Runs a 5-question intake, picks a stack that fits, writes the decision to `STACK.md`, and turns product prompts into a complete vertical slice. Surfaces trade-offs (SQLite vs Postgres, VPS vs Vercel, systemd vs Docker, monolith vs microservices) as two-sentence-plus-question notes. Always defers to your call.
 - **`templates/`**: battle-tested reference configs from real production use. `deploy.sh` (10 lines), `Caddyfile` (8 lines), `app.service` (hardened systemd unit), `litestream.service`, `litestream.yml`. Drop them in, replace the hostnames, ship.
 - **`MANIFESTO.md`**: seven principles. Quote them, link them, fork them.
 - **The newsletter**: weekly field notes on building with Boring Stack: what shipped, what broke, what the bill says, which defaults held up, and which ones need to be sharpened.
@@ -31,7 +32,7 @@ If any of these match your project, use a different stack. The skill will say so
 
 ## Live landing page and newsletter
 
-[boringstack.org](https://boringstack.org/) — manifesto, install snippet, newsletter signup, and OSS launch page. Hosted on GitHub Pages straight out of `docs/`. The signup form posts to a Google Apps Script that appends rows to a Google Sheet — no backend, no monthly bill.
+[boringstack.org](https://boringstack.org/) — CLI quickstart, manifesto, newsletter signup, and OSS launch page. Hosted on GitHub Pages straight out of `docs/`; newsletter signup posts to the small Go service in the companion `boring-stack-backend` repository.
 
 The newsletter is weekly and practical: one build log, one decision, one operational lesson. It is for people using Boring Stack on side projects, indie products, internal tools, and small web apps that should stay legible.
 
@@ -43,7 +44,17 @@ One line. Works with every major AI coding tool.
 curl -fsSL https://boringstack.org/install.sh | bash
 ```
 
-That clones the skill to `~/.boring-stack` and wires it into the tools that have a user-level config (Claude Code, Codex CLI). Idempotent — re-run any time to update.
+That clones the project to `~/.boring-stack`, builds the CLI into `~/.local/bin/boringstack` when Go 1.22+ is available, and wires the skill into tools that have a user-level config (Claude Code, Codex CLI). Idempotent — re-run any time to update.
+
+Create something concrete:
+
+```bash
+boringstack new myapp
+cd myapp
+boringstack dev
+```
+
+The generator refuses to overwrite existing work, then formats, tests, and builds the result. For an agent-built product, ask: `Build me an expense-tracking SaaS using Boring Stack.`
 
 For tools that only support project-level rules (Cursor, Copilot, Cline, Aider, Gemini, Windsurf, Continue, Zed), run this from inside any project where you want the boring stack defaults:
 
@@ -58,6 +69,7 @@ Auto-detects which tools the project uses and drops the right file in each. Fall
 
 | Tool | File written |
 |---|---|
+| Boring Stack CLI | `~/.local/bin/boringstack` |
 | Claude Code | `~/.claude/skills/boring-stack/SKILL.md` (user) or `.claude/skills/boring-stack/SKILL.md` (project) |
 | Codex CLI (OpenAI) | `~/.codex/instructions.md` (appended) |
 | Cursor | `.cursor/rules/boring-stack.mdc` |
@@ -83,7 +95,7 @@ Recognized values: `claude`, `cursor`, `copilot`, `codex`, `aider`, `cline`, `co
 
 ### Use it
 
-In Claude Code: type `/boring-stack`. In Codex CLI / Cursor / Copilot / etc.: the rules load automatically when the tool reads its config.
+From a terminal, run `boringstack new myapp`. In Claude Code, type `/boring-stack`. In Codex CLI / Cursor / Copilot / etc., the rules load automatically when the tool reads its config.
 
 ## Use the templates without the skill
 

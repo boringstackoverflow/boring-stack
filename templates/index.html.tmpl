@@ -1,7 +1,8 @@
 <!--
   Minimal Go html/template starter for the boring stack.
   Loads /static/app.css and htmx from a pinned CDN URL.
-  Cache-busted via the Version field passed from main.go (set from -ldflags).
+  ProjectName and Version are passed from main.go; Version is set from ldflags
+  and cache-busts the stylesheet.
   Edit freely — this is a starting point, not a UI kit.
 
   htmx loaded from unpkg pinned to v2.0.4. To self-host instead, download
@@ -13,14 +14,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>App</title>
+<title>{{ .ProjectName }}</title>
 <link rel="stylesheet" href="/static/app.css?v={{ .Version }}">
 <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
 </head>
 <body>
 
 <header>
-  <h1>It works.</h1>
+  <h1>{{ .ProjectName }} works.</h1>
   <p class="muted">Server-rendered HTML, htmx loaded, version <code>{{ .Version }}</code>.</p>
 </header>
 

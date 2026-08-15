@@ -20,6 +20,8 @@ set -euo pipefail
 REPO_URL="${BORING_STACK_REPO:-https://github.com/boringstackoverflow/boring-stack.git}"
 INSTALL_DIR="${BORING_STACK_HOME:-$HOME/.boring-stack}"
 SOURCE_FILE="$INSTALL_DIR/SKILL.md"
+BIN_DIR="${BORING_STACK_BIN_DIR:-$HOME/.local/bin}"
+CLI_BIN="$BIN_DIR/boringstack"
 
 step() { printf '\033[36m→\033[0m %s\n' "$*"; }
 ok()   { printf '\033[32m✓\033[0m %s\n' "$*"; }
@@ -43,10 +45,40 @@ if [ ! -f "$SOURCE_FILE" ]; then
 fi
 
 #-----------------------------------------------------------------------------
-# 2. Wire into every user-level AI tool dir we find
+# 2. Build the local CLI (the generated apps require Go too)
 #-----------------------------------------------------------------------------
 
 INSTALLED=()
+
+if command -v go >/dev/null 2>&1; then
+    step "building boringstack CLI"
+    mkdir -p "$BIN_DIR"
+    revision=$(git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null || echo dev)
+    if (
+        cd "$INSTALL_DIR"
+        go build -trimpath -ldflags="-s -w -X main.version=$revision" \
+            -o "$CLI_BIN" ./cmd/boringstack
+    ); then
+        INSTALLED+=("CLI          → $CLI_BIN")
+        case ":$PATH:" in
+            *":$BIN_DIR:"*) ;;
+            *)
+                warn "$BIN_DIR is not on PATH"
+                echo "  add this to your shell profile: export PATH=\"$BIN_DIR:\$PATH\""
+                ;;
+        esac
+    else
+        warn "CLI build failed; the AI skill is still installed"
+        echo "  check 'go version' (Go 1.22+ required), then re-run this installer"
+    fi
+else
+    warn "Go is not installed; skipping the boringstack CLI"
+    echo "  the AI skill will still work. Install Go 1.22+ and re-run this installer"
+fi
+
+#-----------------------------------------------------------------------------
+# 3. Wire into every user-level AI tool dir we find
+#-----------------------------------------------------------------------------
 
 # Claude Code (Anthropic CLI). Skills live at ~/.claude/skills/<name>/SKILL.md.
 if [ -d "$HOME/.claude" ] || command -v claude >/dev/null 2>&1; then
@@ -68,7 +100,7 @@ if [ -d "$HOME/.codex" ] || command -v codex >/dev/null 2>&1; then
 For long-lived web-app projects (side projects, internal tools, indie
 products), prefer the boring stack: Go binary + SQLite + Litestream + Caddy
 + systemd + a \$5 VPS. See $SOURCE_FILE for the full ruleset, including
-the 7 manifesto principles and the 4-question stack-picker intake.
+the 7 manifesto principles and the 5-question stack-picker intake.
 EOF
     fi
     INSTALLED+=("Codex CLI    → $target_file")
@@ -79,7 +111,7 @@ fi
 # user-level for Aider; covered via project-level add.sh.
 
 #-----------------------------------------------------------------------------
-# 3. Report
+# 4. Report
 #-----------------------------------------------------------------------------
 
 echo
@@ -89,7 +121,7 @@ if [ ${#INSTALLED[@]} -eq 0 ]; then
     echo "  the skill is cloned at $INSTALL_DIR; you can still use it project-level"
     echo "  via the add.sh script below."
 else
-    ok "installed user-level for ${#INSTALLED[@]} tool(s):"
+    ok "installed ${#INSTALLED[@]} component(s):"
     for t in "${INSTALLED[@]}"; do echo "    $t"; done
 fi
 
@@ -122,7 +154,17 @@ Or pull manually:
 ──────────────────────────────────────────────────────────────────────────
 Try it
 
-In Claude Code, type:    /boring-stack
-In Codex CLI, the rules load automatically for new sessions.
+From a terminal:
+
+    boringstack new myapp
+    cd myapp
+    boringstack dev
+
+Or ask your coding agent:
+
+    Build me an expense-tracking SaaS using Boring Stack.
+
+In Claude Code, /boring-stack still loads the intake directly. In Codex CLI,
+the rules load automatically for new sessions.
 
 EOF

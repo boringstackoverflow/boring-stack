@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Boring Stack: Build web apps the boring way.</title>
-<meta name="description" content="An OSS AI-coding skill, reference templates, manifesto, and weekly newsletter for building web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.">
+<meta name="description" content="A project generator, OSS AI-coding skill, reference templates, manifesto, and weekly newsletter for building web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.">
 <link rel="canonical" href="https://boringstack.org/">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -13,18 +13,18 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 
 <meta property="og:title" content="Boring Stack: Build web apps the boring way.">
-<meta property="og:description" content="An OSS AI-coding skill, templates, manifesto, and weekly build notes for Go + SQLite + Litestream + Caddy + a $5 VPS.">
+<meta property="og:description" content="A project generator, OSS AI-coding skill, templates, manifesto, and weekly build notes for Go + SQLite + Litestream + Caddy + a $5 VPS.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://boringstack.org/">
 <meta property="og:site_name" content="Boring Stack">
 <meta property="og:image" content="https://boringstack.org/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Boring Stack: Build web apps the boring way. OSS skill, templates, and weekly build notes for Claude Code, Cursor, Copilot, Codex, Aider, and more.">
+<meta property="og:image:alt" content="Boring Stack: Build web apps the boring way. Project generator, OSS skill, templates, and weekly build notes for Claude Code, Cursor, Copilot, Codex, Aider, and more.">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Boring Stack: Build web apps the boring way.">
-<meta name="twitter:description" content="An OSS AI-coding skill, templates, manifesto, and weekly build notes for Go + SQLite + Litestream + Caddy + a $5 VPS.">
+<meta name="twitter:description" content="A project generator, OSS AI-coding skill, templates, manifesto, and weekly build notes for Go + SQLite + Litestream + Caddy + a $5 VPS.">
 <meta name="twitter:image" content="https://boringstack.org/og-image.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@
   "@context": "https://schema.org",
   "@type": "SoftwareSourceCode",
   "name": "Boring Stack",
-  "description": "An OSS AI-coding skill plus reference templates, a manifesto, and weekly build notes for Go + SQLite + Litestream + Caddy + a $5 VPS. Works with Claude Code, Cursor, Copilot, Codex, Aider, Cline, Continue, Gemini, Windsurf, and Zed.",
+  "description": "A project generator and OSS AI-coding skill plus reference templates, a manifesto, and weekly build notes for Go + SQLite + Litestream + Caddy + a $5 VPS. Works with Claude Code, Cursor, Copilot, Codex, Aider, Cline, Continue, Gemini, Windsurf, and Zed.",
   "url": "https://boringstack.org/",
   "codeRepository": "https://github.com/boringstackoverflow/boring-stack",
   "programmingLanguage": ["Go", "Shell"],
@@ -61,22 +61,23 @@
 
 <h1 class="hero">Build web apps the boring way<span class="dot">.</span></h1>
 
-<p class="subhead">An open-source AI coding skill, battle-tested templates, and a weekly field note for builders who want their software to stay legible. Go, SQLite, Litestream, Caddy, systemd, a $5 VPS.</p>
+<p class="subhead">An open-source project generator, AI coding skill, battle-tested templates, and a weekly field note for builders who want their software to stay legible. Go, SQLite, Litestream, Caddy, systemd, a $5 VPS.</p>
 
-<pre class="terminal" aria-label="cost summary">
-<span class="prompt">$</span> boringstack cost --last 30d
-hetzner cx22          <span class="num">$4.59</span>
-cloudflare r2         <span class="num">$0.12</span>
-boringstack.org dns   <span class="num">$1.25</span>
-resend (free tier)    <span class="num">$0.00</span>
-────────────────────────────
-<span class="total">total                 $5.96/mo</span>
+<pre class="terminal" aria-label="create a Boring Stack app">
+<span class="prompt">$</span> boringstack new expense-tracker
+Created expense-tracker (19 files).
+→ go test ./...       <span class="num">ok</span>
+→ go build .          <span class="num">ok</span>
+
+<span class="prompt">$</span> cd expense-tracker &amp;&amp; boringstack dev
+→ running <span class="total">http://localhost:8080</span>
 </pre>
 
 <section>
   <h2>What this is</h2>
   <ol class="steps">
-    <li><strong>The skill.</strong> Type <code>/boring-stack</code> in any Claude Code session and Claude loads opinionated defaults for that project. Pushes back on Postgres, Vercel, ORMs, Docker, and microservices when they don't fit the archetype. Two sentences plus a question per pushback. Always defers to your call.</li>
+    <li><strong>The CLI.</strong> Run <code>boringstack new myapp</code> and get a working, tested Go app with the stack decisions and deploy files checked in. Run <code>boringstack dev</code> to see it and <code>boringstack deploy</code> when the VPS is ready.</li>
+    <li><strong>The skill.</strong> Ask your coding agent to build a product using Boring Stack. It runs a five-question fit check, starts from the same canonical scaffold, then adds the actual product slice. Pushes back on Postgres, Vercel, ORMs, Docker, and microservices when they don't fit. Always defers to your call.</li>
     <li><strong>The templates.</strong> The exact <code>deploy.sh</code>, <code>Caddyfile</code>, <code>app.service</code>, and Litestream config used in real production. Drop them in, replace the hostnames, ship. Zero magic.</li>
     <li><strong>The manifesto.</strong> Seven principles for shipping software that stays out of your way. Quote it, link it, fork it. <a href="manifesto.html">Read the manifesto.</a></li>
     <li><strong>The movement.</strong> A weekly newsletter on how to build with Boring Stack: real costs, boring decisions, restore drills, launch notes, template changes, and war stories from people running the stack.</li>
@@ -125,7 +126,18 @@ resend (free tier)    <span class="num">$0.00</span>
 <span class="prompt">$</span> curl -fsSL https://boringstack.org/install.sh | bash
 </pre>
 
-  <p>That clones the repo to <code>~/.boring-stack</code> and wires it into the tools that have a user-level config (Claude Code, Codex CLI). For tools that only support per-project rules, run this from inside any project where you want the boring stack defaults:</p>
+  <p>That clones the repo to <code>~/.boring-stack</code>, builds the CLI into <code>~/.local/bin</code> when Go 1.22+ is available, and wires the skill into tools that have a user-level config. Then make the idea concrete:</p>
+
+  <pre class="terminal" aria-label="create and run a project"
+       data-copy="boringstack new myapp&#10;cd myapp&#10;boringstack dev">
+<span class="prompt">$</span> boringstack new myapp
+<span class="prompt">$</span> cd myapp
+<span class="prompt">$</span> boringstack dev
+  </pre>
+
+  <p>Or tell your coding agent: <code>Build me an expense-tracking SaaS using Boring Stack.</code> The agent starts from the same scaffold and adds a complete feature slice instead of another abstract stack recommendation.</p>
+
+  <p>For tools that only support per-project rules, run this from inside any project where you want the boring stack defaults:</p>
 
   <pre class="terminal" aria-label="project-level install"
        data-copy="curl -fsSL https://boringstack.org/add.sh | bash">
@@ -139,6 +151,7 @@ resend (free tier)    <span class="num">$0.00</span>
     <table class="tool-table">
       <thead><tr><th>Tool</th><th>File written</th></tr></thead>
       <tbody>
+        <tr><td>Boring Stack CLI</td><td><code>~/.local/bin/boringstack</code></td></tr>
         <tr><td>Claude Code</td><td><code>~/.claude/skills/boring-stack/SKILL.md</code> (user) or <code>.claude/skills/boring-stack/SKILL.md</code> (project)</td></tr>
         <tr><td>Codex CLI (OpenAI)</td><td><code>~/.codex/instructions.md</code> (appended)</td></tr>
         <tr><td>Cursor</td><td><code>.cursor/rules/boring-stack.mdc</code></td></tr>

@@ -1,0 +1,33 @@
+# Stack
+
+Decided __DATE__ via Boring Stack. Re-run the intake if the project's data
+shape, team size, region, SLA, or interactivity requirements change materially.
+
+## Choices
+
+- **Language/runtime**: Go 1.22+
+- **Database**: SQLite in WAL mode when persistence is added; Litestream to R2
+- **HTTP**: Caddy reverse proxy to one Go binary
+- **Process supervision**: systemd
+- **Hosting**: one small VPS in one region
+- **Frontend**: Stage 1, `html/template` + htmx + one hand-written CSS file
+- **Deploy**: `deploy/deploy.sh` through `boringstack deploy`
+
+## Why
+
+This scaffold assumes a small team, under 100 GB of data, fewer than roughly
+100 concurrent writers, one region, and no life-safety or hard financial SLA.
+Those constraints fit a legible monolith and a single-server recovery story.
+
+## Migration paths
+
+- SQLite to Postgres: `pgloader` plus a connection-string swap.
+- One VPS to two: put a load balancer in front; keep the binary and Caddy config.
+- Monolith to services: extract one `internal/` package at a time behind HTTP.
+- Stage 1 to richer UI: add a small embedded widget before replacing the shell.
+
+## Anti-drift
+
+Future infrastructure decisions must consult this file. If a new requirement
+contradicts a choice, update this file with the date and reason instead of
+quietly adding another database, runtime, or deployment system.

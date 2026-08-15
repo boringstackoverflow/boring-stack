@@ -1,4 +1,4 @@
-.PHONY: build serve clean
+.PHONY: build cli test serve clean
 
 # Render docs/issues/*.md → docs/issues/*.html, regenerate the archive
 # index, and update docs/feed.xml. Commit the rendered output.
@@ -13,9 +13,17 @@
 build:
 	cd tools && go run .
 
+cli:
+	go build -ldflags="-X main.version=$$(git rev-parse --short HEAD 2>/dev/null || echo dev)" -o boringstack ./cmd/boringstack
+
+test:
+	go test ./...
+	cd tools && go test ./...
+	bash -n docs/install.sh docs/add.sh
+
 # Local preview at http://127.0.0.1:8000
 serve:
 	cd docs && python3 -m http.server 8000
 
 clean:
-	rm -f docs/issues/*.html docs/feed.xml
+	rm -f docs/issues/*.html docs/feed.xml boringstack

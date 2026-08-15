@@ -10,4 +10,5 @@
 # local dev artifacts
 *.tar.gz
 /dist/
+/boringstack
 .gstack/
