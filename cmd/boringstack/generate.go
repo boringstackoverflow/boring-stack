@@ -83,7 +83,7 @@ func (c *cli) runNew(args []string) error {
 	keepTemp = true
 
 	printCreated(c.stdout, name, files)
-	return c.validateGeneratedProject(target)
+	return c.reportScaffold("new", c.validateGeneratedProject(target))
 }
 
 func (c *cli) runInit(args []string) error {
@@ -120,7 +120,7 @@ func (c *cli) runInit(args []string) error {
 		return err
 	}
 	printCreated(c.stdout, ".", files)
-	return c.validateGeneratedProject(c.cwd)
+	return c.reportScaffold("init", c.validateGeneratedProject(c.cwd))
 }
 
 func parseNewArgs(args []string) (name, module string, dryRun bool, err error) {

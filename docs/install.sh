@@ -23,9 +23,47 @@ SOURCE_FILE="$INSTALL_DIR/SKILL.md"
 BIN_DIR="${BORING_STACK_BIN_DIR:-$HOME/.local/bin}"
 CLI_BIN="$BIN_DIR/boringstack"
 
+EVENTS_URL="${BORING_STACK_EVENTS_URL:-https://api.boringstack.org/v1/events}"
+
 step() { printf '\033[36m→\033[0m %s\n' "$*"; }
 ok()   { printf '\033[32m✓\033[0m %s\n' "$*"; }
 warn() { printf '\033[33m!\033[0m %s\n' "$*" >&2; }
+
+# Set up front because `set -u` is on and the CLI build below is conditional.
+cli_installed=false
+revision=dev
+
+# install_id identifies this installation, not this run, so re-running the
+# installer to update does not look like a brand new install. Stored next to
+# the checkout; delete the file and you become a new install.
+install_id() {
+    local f="$INSTALL_DIR/.install-id"
+    if [ -f "$f" ]; then cat "$f" 2>/dev/null && return; fi
+    local id
+    id=$( (uuidgen 2>/dev/null || od -An -N16 -tx1 /dev/urandom 2>/dev/null || date +%s%N) \
+          | tr -d ' \n-' | tr 'A-Z' 'a-z' | cut -c1-32 )
+    mkdir -p "$INSTALL_DIR" 2>/dev/null || true
+    printf '%s' "$id" > "$f" 2>/dev/null || true
+    printf '%s' "$id"
+}
+
+# report sends one anonymous event: no username, no paths, no project names.
+#
+# Every guard here is deliberate. `--max-time 2` bounds a hung endpoint, `|| true`
+# keeps `set -e` from turning a network blip into a failed install, and the
+# redirects keep curl silent. An install must never fail, stall, or look broken
+# because our analytics box is down. It runs last, after all user-facing output,
+# so even the 2s worst case is invisible.
+report() {
+    local event="$1"; shift
+    step "reporting anonymous install event to ${EVENTS_URL%/v1/events}"
+    curl -fsS --max-time 2 -X POST "$EVENTS_URL" \
+        -d "event=$event" \
+        -d "install_id=$(install_id)" \
+        -d "os=$(uname -s 2>/dev/null || echo unknown)" \
+        -d "arch=$(uname -m 2>/dev/null || echo unknown)" \
+        "$@" >/dev/null 2>&1 || true
+}
 
 #-----------------------------------------------------------------------------
 # 1. Clone or update the canonical install
@@ -54,11 +92,13 @@ if command -v go >/dev/null 2>&1; then
     step "building boringstack CLI"
     mkdir -p "$BIN_DIR"
     revision=$(git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null || echo dev)
+    export BORING_STACK_REVISION="$revision"
     if (
         cd "$INSTALL_DIR"
         go build -trimpath -ldflags="-s -w -X main.version=$revision" \
             -o "$CLI_BIN" ./cmd/boringstack
     ); then
+        cli_installed=true
         INSTALLED+=("CLI          → $CLI_BIN")
         case ":$PATH:" in
             *":$BIN_DIR:"*) ;;
@@ -168,3 +208,14 @@ In Claude Code, /boring-stack still loads the intake directly. In Codex CLI,
 the rules load automatically for new sessions.
 
 EOF
+
+#-----------------------------------------------------------------------------
+# 5. Anonymous install report (last, after everything the user cares about)
+#-----------------------------------------------------------------------------
+#
+# "install_success" means the skill installed. It does NOT mean the CLI did:
+# the CLI build is skipped entirely when Go is missing, so cli_installed is
+# reported separately and the dashboard's CLI install rate counts only the
+# true ones. Conflating the two would have quietly overstated adoption.
+
+report install_success -d "cli_installed=$cli_installed" -d "rev=$revision"

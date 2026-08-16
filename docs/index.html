@@ -222,32 +222,37 @@ Created expense-tracker (19 files).
   </span>
 </footer>
 
-<script>
-// Copy button for any <pre class="terminal" data-copy="...">.
-// 18 lines of vanilla JS, no deps. Boring stack applied to its own marketing.
-document.querySelectorAll('pre.terminal[data-copy]').forEach(function(pre) {
-  var btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'copy-btn';
-  btn.textContent = 'copy';
-  btn.setAttribute('aria-label', 'copy command to clipboard');
-  btn.addEventListener('click', function() {
-    navigator.clipboard.writeText(pre.dataset.copy).then(function() {
-      btn.textContent = 'copied';
-      btn.dataset.state = 'copied';
-      setTimeout(function() { btn.textContent = 'copy'; delete btn.dataset.state; }, 1500);
-    }).catch(function() {
-      btn.textContent = 'failed';
-      setTimeout(function() { btn.textContent = 'copy'; }, 1500);
-    });
-  });
-  pre.appendChild(btn);
-});
+<noscript>
+  <!--
+    No-JS visitors would otherwise be invisible to the funnel, and BSB — not
+    Cloudflare — is the canonical visitor count. <noscript> guarantees this and
+    the sendBeacon below never both fire for the same visit.
+  -->
+  <img src="https://api.boringstack.org/v1/px.gif?p=/" alt="" width="1" height="1" style="position:absolute">
+</noscript>
 
-// Progressive enhancement for the signup form. With JS, we POST to BSB in
-// the background and show inline status; without JS, the browser follows
-// the form's normal POST and lands on BSB's "Check your inbox" HTML page.
-// Either path captures the email + triggers the confirmation send.
+<!--
+  Analytics loads as its OWN script element, before the inline block below.
+  Separate <script> elements have independent error boundaries, so an uncaught
+  error in analytics.js cannot stop the newsletter form below from being wired
+  up. That ordering is the whole mitigation; do not merge these two blocks.
+-->
+<script src="analytics.js"></script>
+
+<script>
+// Fallbacks in case analytics.js was blocked, 404'd, or threw. The features
+// below must work regardless, so they never call bsEvent unguarded.
+if (typeof bsEvent !== 'function') { bsEvent = function () {}; }
+if (typeof bsFirstTouch !== 'function') { bsFirstTouch = function () { return {}; }; }
+
+// ── Newsletter signup ──────────────────────────────────────────────────────
+// Progressive enhancement: with JS we POST to BSB in the background and show
+// inline status; without JS the browser follows the form's normal POST and
+// lands on BSB's "Check your inbox" page. Either path captures the email.
+//
+// Note the mode:'no-cors' below: the response is opaque, so this code cannot
+// actually tell whether the server succeeded. That is exactly why BSB records
+// the newsletter_signup event server-side instead of trusting a beacon here.
 (function () {
   var form = document.getElementById('signup-form');
   var status = document.getElementById('signup-status');
@@ -264,10 +269,20 @@ document.querySelectorAll('pre.terminal[data-copy]').forEach(function(pre) {
     btn.textContent = 'sending…';
     status.hidden = true;
 
+    var body = new URLSearchParams(new FormData(form));
+    // Attribution is a bonus field, never a precondition for submitting.
+    try {
+      var ft = bsFirstTouch();
+      if (ft.id) body.set('attribution_id', ft.id);
+      if (ft.src) body.set('utm_source', ft.src);
+      if (ft.campaign) body.set('utm_campaign', ft.campaign);
+      if (ft.ref) body.set('ref', ft.ref);
+    } catch (e) { /* submit unattributed rather than not at all */ }
+
     fetch(action, {
       method: 'POST',
       mode: 'no-cors',                  // BSB returns HTML; we trust 200
-      body: new URLSearchParams(new FormData(form)),
+      body: body,
     }).then(function () {
       form.reset();
       status.textContent = "Check your inbox — we just sent a confirmation link. Click it to finish subscribing.";
@@ -280,6 +295,31 @@ document.querySelectorAll('pre.terminal[data-copy]').forEach(function(pre) {
       btn.textContent = prevLabel;
       if (emailInput) emailInput.blur();
     });
+  });
+})();
+
+// ── Copy buttons for any <pre class="terminal" data-copy="..."> ────────────
+(function () {
+  document.querySelectorAll('pre.terminal[data-copy]').forEach(function (pre) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'copy';
+    btn.setAttribute('aria-label', 'copy command to clipboard');
+    btn.addEventListener('click', function () {
+      navigator.clipboard.writeText(pre.dataset.copy).then(function () {
+        btn.textContent = 'copied';
+        btn.dataset.state = 'copied';
+        setTimeout(function () { btn.textContent = 'copy'; delete btn.dataset.state; }, 1500);
+        // Only after the clipboard write actually resolved, and never allowed to
+        // interfere with the "copied" label the user is waiting to see.
+        try { bsEvent('install_copy', { label: pre.getAttribute('aria-label') || '' }); } catch (e) {}
+      }).catch(function () {
+        btn.textContent = 'failed';
+        setTimeout(function () { btn.textContent = 'copy'; }, 1500);
+      });
+    });
+    pre.appendChild(btn);
   });
 })();
 </script>

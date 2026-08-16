@@ -97,6 +97,36 @@ Recognized values: `claude`, `cursor`, `copilot`, `codex`, `aider`, `cline`, `co
 
 From a terminal, run `boringstack new myapp`. In Claude Code, type `/boring-stack`. In Codex CLI / Cursor / Copilot / etc., the rules load automatically when the tool reads its config.
 
+## Anonymous usage reporting
+
+The installer and the `boringstack` CLI report a few anonymous events to
+`api.boringstack.org` so we can see whether installs actually succeed and
+whether generated projects actually build:
+
+| When | Event | What is sent |
+|---|---|---|
+| `install.sh` finishes | `install_success` | install ID, OS/arch, git revision, whether the CLI built |
+| `add.sh` finishes | `install_project` | install ID, OS/arch, number of tool configs written |
+| `boringstack new`/`init` | `project_created`, `project_validated` | install ID, OS/arch, CLI version, `new` vs `init`, whether fmt/test/build passed |
+
+The install ID is a random string stored at `~/.boring-stack/.install-id`. It is
+not derived from anything about you or your machine. Delete the file and you
+become a new install.
+
+**Never sent:** your name, email, IP-derived identifiers, project names, module
+paths, directory paths, git remotes, or any file contents.
+
+Reporting is best-effort and capped at two seconds. It cannot fail an install,
+delay a scaffold beyond half a second, or change any command's exit code — an
+unreachable endpoint is simply skipped. The installer prints a line when it
+reports. Read the code: [`docs/install.sh`](docs/install.sh),
+[`docs/add.sh`](docs/add.sh),
+[`cmd/boringstack/telemetry.go`](cmd/boringstack/telemetry.go).
+
+There is currently no opt-out flag. If that matters to you, the events are three
+`curl` calls and one Go file — delete them and rebuild, or install by cloning
+the repo directly instead of running `install.sh`.
+
 ## Use the templates without the skill
 
 The configs in `templates/` work standalone. Copy the file, replace the hostname / domain / R2 account placeholders, ship.
