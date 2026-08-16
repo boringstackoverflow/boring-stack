@@ -19,6 +19,9 @@ type cli struct {
 	getenv   func(string) string
 	lookPath func(string) (string, error)
 	now      func() time.Time
+
+	// nil disables scaffold telemetry entirely (used by the test suite).
+	telemetry *telemetry
 }
 
 func main() {
@@ -29,7 +32,13 @@ func main() {
 	}
 
 	app := newCLI(wd, os.Stdin, os.Stdout, os.Stderr)
-	os.Exit(app.run(os.Args[1:]))
+	app.telemetry = &telemetry{}
+	code := app.run(os.Args[1:])
+	// Bounded, and deliberately after run() has produced the exit code:
+	// telemetry can delay exit by at most flushTimeout and can never change
+	// what that code is.
+	app.flush()
+	os.Exit(code)
 }
 
 func newCLI(wd string, stdin io.Reader, stdout, stderr io.Writer) *cli {

@@ -32,9 +32,34 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+EVENTS_URL="${BORING_STACK_EVENTS_URL:-https://api.boringstack.org/v1/events}"
+
 step() { printf '\033[36m→\033[0m %s\n' "$*"; }
 ok()   { printf '\033[32m✓\033[0m %s\n' "$*"; }
 skip() { printf '\033[2m·\033[0m %s\n' "$*"; }
+
+# Reuses the install ID written by install.sh when present, so a project-level
+# add ties back to the machine's install without inventing a new identity.
+# Never records the project name, path, or git remote.
+install_id() {
+    f="$INSTALL_DIR/.install-id"
+    if [ -f "$f" ]; then cat "$f" 2>/dev/null && return; fi
+    printf 'standalone'
+}
+
+# See install.sh for why every guard matters: --max-time bounds a hung endpoint
+# and `|| true` stops `set -e` from failing the script over a network blip.
+# Adding boring-stack to a project must never fail because of analytics.
+report() {
+    event="$1"; shift
+    step "reporting anonymous event to ${EVENTS_URL%/v1/events}"
+    curl -fsS --max-time 2 -X POST "$EVENTS_URL" \
+        -d "event=$event" \
+        -d "install_id=$(install_id)" \
+        -d "os=$(uname -s 2>/dev/null || echo unknown)" \
+        -d "arch=$(uname -m 2>/dev/null || echo unknown)" \
+        "$@" >/dev/null 2>&1 || true
+}
 
 #-----------------------------------------------------------------------------
 # Source the SKILL.md content. Prefer the local install; fall back to fetch.
@@ -198,3 +223,7 @@ fi
 echo
 echo "Update later by re-running this script. Tracked content lives at:"
 echo "  $INSTALL_DIR/SKILL.md  (or fetched fresh from main if not installed)"
+
+# Last, after everything the user cares about. Records only how many tool
+# configs were written, never which project this ran in.
+report install_project -d "ok=${#INSTALLED[@]}"
