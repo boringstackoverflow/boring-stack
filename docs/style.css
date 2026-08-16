@@ -50,25 +50,13 @@ p.subhead {
 }
 
 /* --- homepage hero -------------------------------------------------------
-   The hero is sized against one constraint: the install command must be
-   reachable without scrolling on a phone. Everything above it stays tight, and
-   the stack list collapses to a wrapped inline row on narrow screens rather
-   than spending six lines of vertical budget. */
+   The hero is a pair: the cost table makes the argument, the install command is
+   what to do about it. They are styled to read as one unit. */
 
-ul.stack-list {
-  list-style: none;
-  font-family: var(--font-mono);
-  font-size: 17px; line-height: 1.45;
-  max-width: var(--content-max); margin: 0 auto 20px;
-}
-
-p.negations {
-  color: var(--fg-muted); font-size: 16px; line-height: 1.5;
-  max-width: var(--content-max); margin: 0 auto 24px;
-}
-/* The qualifier is the point of the sentence, not a footnote — own line, full
-   contrast, so it doesn't read as a disclaimer trailing off in grey. */
-p.negations span { display: block; color: var(--fg); margin-top: 2px; }
+/* pre.terminal carries a 64px bottom margin, which would separate the two into
+   unrelated blocks. :has() avoids adding a class purely for spacing; if a
+   browser ever lacks it the only consequence is a wider gap. */
+pre.terminal:has(+ pre.terminal-cta) { margin-bottom: 12px; }
 
 p.hero-secondary {
   font-size: 15px; color: var(--fg-muted);
@@ -81,11 +69,6 @@ p.hero-secondary a {
 p.hero-secondary a:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
 @media (max-width: 540px) {
-  /* Six stacked lines would push the command below the fold; wrap them into
-     one flowing row with separators instead. */
-  ul.stack-list { display: flex; flex-wrap: wrap; font-size: 15px; margin-bottom: 16px; }
-  ul.stack-list li + li::before { content: "·"; color: var(--fg-muted); margin: 0 8px; }
-  p.negations { font-size: 15px; margin-bottom: 20px; }
   p.hero-secondary { margin-bottom: 40px; }
 
   /* Other terminals may scroll horizontally — they're illustrations. This one
