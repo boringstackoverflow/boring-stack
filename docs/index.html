@@ -73,33 +73,6 @@ resend (free tier)    <span class="num">$0.00</span>
 <span class="total">total                 $5.96/mo</span>
 </pre>
 
-<!--
-  Proof, then action. The cost table is the argument; this is the thing to do
-  about it, so the two read as one unit rather than as separate blocks.
-
-  The aria-label is load-bearing beyond accessibility: analytics.js sends it as
-  the `label` property of the install_copy event, so it must stay distinct from
-  the "user-level install" block further down or the two become
-  indistinguishable in the funnel report.
--->
-<pre class="terminal terminal-cta" aria-label="install Boring Stack"
-     data-copy="curl -fsSL https://boringstack.org/install.sh | bash">
-<span class="prompt">$</span> curl -fsSL https://boringstack.org/install.sh | bash
-</pre>
-
-<p class="hero-secondary"><a href="#newsletter">Join 200+ builders &rarr;</a></p>
-
-<section>
-  <h2>What this is</h2>
-  <ol class="steps">
-    <li><strong>The CLI.</strong> Run <code>boringstack new myapp</code> and get a working, tested Go app with the stack decisions and deploy files checked in. Run <code>boringstack dev</code> to see it and <code>boringstack deploy</code> when the VPS is ready.</li>
-    <li><strong>The skill.</strong> Ask your coding agent to build a product using Boring Stack. It runs a five-question fit check, starts from the same canonical scaffold, then adds the actual product slice. Pushes back on Postgres, Vercel, ORMs, Docker, and microservices when they don't fit. Always defers to your call.</li>
-    <li><strong>The templates.</strong> The exact <code>deploy.sh</code>, <code>Caddyfile</code>, <code>app.service</code>, and Litestream config used in real production. Drop them in, replace the hostnames, ship. Zero magic.</li>
-    <li><strong>The manifesto.</strong> Seven principles for shipping software that stays out of your way. Quote it, link it, fork it. <a href="manifesto.html">Read the manifesto.</a></li>
-    <li><strong>The movement.</strong> A weekly newsletter on how to build with Boring Stack: real costs, boring decisions, restore drills, launch notes, template changes, and war stories from people running the stack.</li>
-  </ol>
-</section>
-
 <section>
   <h2>The movement</h2>
   <p>Boring Stack is for builders who would rather ship a small, understandable system than rent a distributed platform before the product earns it. The movement is the public practice: publish the defaults, publish the costs, publish the failures, and make the simple path easier to choose next time.</p>
@@ -130,6 +103,17 @@ resend (free tier)    <span class="num">$0.00</span>
     </form>
     <p class="signup-status" id="signup-status" hidden role="status" aria-live="polite"></p>
   </div>
+</section>
+
+<section>
+  <h2>What this is</h2>
+  <ol class="steps">
+    <li><strong>The CLI.</strong> Run <code>boringstack new myapp</code> and get a working, tested Go app with the stack decisions and deploy files checked in. Run <code>boringstack dev</code> to see it and <code>boringstack deploy</code> when the VPS is ready.</li>
+    <li><strong>The skill.</strong> Ask your coding agent to build a product using Boring Stack. It runs a five-question fit check, starts from the same canonical scaffold, then adds the actual product slice. Pushes back on Postgres, Vercel, ORMs, Docker, and microservices when they don't fit. Always defers to your call.</li>
+    <li><strong>The templates.</strong> The exact <code>deploy.sh</code>, <code>Caddyfile</code>, <code>app.service</code>, and Litestream config used in real production. Drop them in, replace the hostnames, ship. Zero magic.</li>
+    <li><strong>The manifesto.</strong> Seven principles for shipping software that stays out of your way. Quote it, link it, fork it. <a href="manifesto.html">Read the manifesto.</a></li>
+    <li><strong>The movement.</strong> A weekly newsletter on how to build with Boring Stack: real costs, boring decisions, restore drills, launch notes, template changes, and war stories from people running the stack.</li>
+  </ol>
 </section>
 
 <section>

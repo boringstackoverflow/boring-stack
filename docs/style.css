@@ -49,42 +49,6 @@ p.subhead {
   max-width: var(--content-max); margin: 0 auto 48px;
 }
 
-/* --- homepage hero -------------------------------------------------------
-   The hero is a pair: the cost table makes the argument, the install command is
-   what to do about it. They are styled to read as one unit. */
-
-/* pre.terminal carries a 64px bottom margin, which would separate the two into
-   unrelated blocks. :has() avoids adding a class purely for spacing; if a
-   browser ever lacks it the only consequence is a wider gap. */
-pre.terminal:has(+ pre.terminal-cta) { margin-bottom: 12px; }
-
-p.hero-secondary {
-  font-size: 15px; color: var(--fg-muted);
-  max-width: var(--content-max); margin: 12px auto 56px;
-}
-p.hero-secondary a {
-  color: var(--fg-muted); text-decoration: none;
-  border-bottom: 1px solid var(--rule); padding-bottom: 1px;
-}
-p.hero-secondary a:hover { color: var(--accent); border-bottom-color: var(--accent); }
-
-@media (max-width: 540px) {
-  p.hero-secondary { margin-bottom: 40px; }
-
-  /* Other terminals may scroll horizontally — they're illustrations. This one
-     is the call to action, so the whole command has to be readable without
-     scrolling sideways. Indent the wrapped line so it still reads as one
-     command rather than two.
-     Both classes are named deliberately: pre.terminal sets `white-space: pre`
-     further down this file, and at equal specificity it would win on source
-     order. */
-  pre.terminal.terminal-cta {
-    white-space: pre-wrap;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-  }
-}
-
 pre.terminal {
   font-family: var(--font-mono); font-size: 15px; line-height: 1.6;
   background: var(--fg); color: var(--bg); padding: 24px; border-radius: 4px;
