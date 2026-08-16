@@ -59,9 +59,37 @@
   </span>
 </nav>
 
-<h1 class="hero">Build web apps the boring way<span class="dot">.</span></h1>
+<h1 class="hero">Give your AI coding agent better defaults<span class="dot">.</span></h1>
 
-<p class="subhead">An open-source project generator, AI coding skill, battle-tested templates, and a weekly field note for builders who want their software to stay legible. Go, SQLite, Litestream, Caddy, systemd, a $5 VPS.</p>
+<ul class="stack-list" aria-label="the stack">
+  <li>Go</li>
+  <li>SQLite</li>
+  <li>Litestream</li>
+  <li>Caddy</li>
+  <li>systemd</li>
+  <li>$5 VPS</li>
+</ul>
+
+<p class="negations">
+  No Docker. No Kubernetes. No ORM. No cloud platform.
+  <span>Until you actually need them.</span>
+</p>
+
+<!--
+  The primary CTA is the command itself, not a button: copying it is the
+  highest-intent action on the page and it should not cost a scroll.
+
+  The aria-label is load-bearing beyond accessibility — analytics.js sends it
+  as the `label` property of the install_copy event, so this must stay distinct
+  from the one in the Install section or the two become indistinguishable in
+  the funnel report.
+-->
+<pre class="terminal terminal-cta" aria-label="install Boring Stack"
+     data-copy="curl -fsSL https://boringstack.org/install.sh | bash">
+<span class="prompt">$</span> curl -fsSL https://boringstack.org/install.sh | bash
+</pre>
+
+<p class="hero-secondary"><a href="#newsletter">Join 200+ builders &rarr;</a></p>
 
 <pre class="terminal" aria-label="create a Boring Stack app">
 <span class="prompt">$</span> boringstack new expense-tracker
@@ -73,50 +101,7 @@ Created expense-tracker (19 files).
 → running <span class="total">http://localhost:8080</span>
 </pre>
 
-<section>
-  <h2>What this is</h2>
-  <ol class="steps">
-    <li><strong>The CLI.</strong> Run <code>boringstack new myapp</code> and get a working, tested Go app with the stack decisions and deploy files checked in. Run <code>boringstack dev</code> to see it and <code>boringstack deploy</code> when the VPS is ready.</li>
-    <li><strong>The skill.</strong> Ask your coding agent to build a product using Boring Stack. It runs a five-question fit check, starts from the same canonical scaffold, then adds the actual product slice. Pushes back on Postgres, Vercel, ORMs, Docker, and microservices when they don't fit. Always defers to your call.</li>
-    <li><strong>The templates.</strong> The exact <code>deploy.sh</code>, <code>Caddyfile</code>, <code>app.service</code>, and Litestream config used in real production. Drop them in, replace the hostnames, ship. Zero magic.</li>
-    <li><strong>The manifesto.</strong> Seven principles for shipping software that stays out of your way. Quote it, link it, fork it. <a href="manifesto.html">Read the manifesto.</a></li>
-    <li><strong>The movement.</strong> A weekly newsletter on how to build with Boring Stack: real costs, boring decisions, restore drills, launch notes, template changes, and war stories from people running the stack.</li>
-  </ol>
-</section>
-
-<section>
-  <h2>The movement</h2>
-  <p>Boring Stack is for builders who would rather ship a small, understandable system than rent a distributed platform before the product earns it. The movement is the public practice: publish the defaults, publish the costs, publish the failures, and make the simple path easier to choose next time.</p>
-  <p>The repo gives agents better defaults. The newsletter keeps those defaults honest by showing how they hold up in real products built by people running the stack.</p>
-</section>
-
-<section id="newsletter">
-  <h2>Join the movement</h2>
-
-  <div class="signup primary">
-    <h3>Get Boring Stack Weekly</h3>
-    <p>One practical email each week on how to build with Boring Stack: what shipped, what broke, how the bill changed, which agent defaults improved, and what the latest restore drill taught. The newsletter is where the build stays public.</p>
-    <!--
-      action below is the boring-stack-backend (BSB) signup endpoint at
-      api.boringstack.org. Plain form POST, no preflight (form-encoded body,
-      no custom headers). BSB sends a confirmation email; the subscriber is
-      not on the list until they click the link. Without JS, the browser
-      follows the POST and lands on BSB's "Check your inbox" HTML page.
-    -->
-    <form id="signup-form"
-          action="https://api.boringstack.org/v1/newsletter/subscribe"
-          method="post"
-          autocomplete="on"
-          target="_top">
-      <input type="hidden" name="list" value="boring-stack-weekly">
-      <input type="email" name="email" required placeholder="you@vps.lan" aria-label="your email">
-      <button type="submit">Join the movement</button>
-    </form>
-    <p class="signup-status" id="signup-status" hidden role="status" aria-live="polite"></p>
-  </div>
-</section>
-
-<section>
+<section id="install">
   <h2>Install</h2>
 
   <p>One line. Works with every major AI coding tool.</p>
@@ -171,6 +156,43 @@ Created expense-tracker (19 files).
   <p class="tip">tip: the skill is MIT and stays MIT. Use it, fork it, ignore it, write a better one.</p>
 </section>
 
+<section id="newsletter">
+  <h2>Join the movement</h2>
+
+  <div class="signup primary">
+    <h3>Get Boring Stack Weekly</h3>
+    <p>One practical email each week on how to build with Boring Stack: what shipped, what broke, how the bill changed, which agent defaults improved, and what the latest restore drill taught. The newsletter is where the build stays public.</p>
+    <!--
+      action below is the boring-stack-backend (BSB) signup endpoint at
+      api.boringstack.org. Plain form POST, no preflight (form-encoded body,
+      no custom headers). BSB sends a confirmation email; the subscriber is
+      not on the list until they click the link. Without JS, the browser
+      follows the POST and lands on BSB's "Check your inbox" HTML page.
+    -->
+    <form id="signup-form"
+          action="https://api.boringstack.org/v1/newsletter/subscribe"
+          method="post"
+          autocomplete="on"
+          target="_top">
+      <input type="hidden" name="list" value="boring-stack-weekly">
+      <input type="email" name="email" required placeholder="you@vps.lan" aria-label="your email">
+      <button type="submit">Join the movement</button>
+    </form>
+    <p class="signup-status" id="signup-status" hidden role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+<section>
+  <h2>What this is</h2>
+  <ol class="steps">
+    <li><strong>The CLI.</strong> Run <code>boringstack new myapp</code> and get a working, tested Go app with the stack decisions and deploy files checked in. Run <code>boringstack dev</code> to see it and <code>boringstack deploy</code> when the VPS is ready.</li>
+    <li><strong>The skill.</strong> Ask your coding agent to build a product using Boring Stack. It runs a five-question fit check, starts from the same canonical scaffold, then adds the actual product slice. Pushes back on Postgres, Vercel, ORMs, Docker, and microservices when they don't fit. Always defers to your call.</li>
+    <li><strong>The templates.</strong> The exact <code>deploy.sh</code>, <code>Caddyfile</code>, <code>app.service</code>, and Litestream config used in real production. Drop them in, replace the hostnames, ship. Zero magic.</li>
+    <li><strong>The manifesto.</strong> Seven principles for shipping software that stays out of your way. Quote it, link it, fork it. <a href="manifesto.html">Read the manifesto.</a></li>
+    <li><strong>The movement.</strong> A weekly newsletter on how to build with Boring Stack: real costs, boring decisions, restore drills, launch notes, template changes, and war stories from people running the stack.</li>
+  </ol>
+</section>
+
 <section>
   <h2>What the skill picks</h2>
   <ul class="pushbacks">
@@ -211,6 +233,12 @@ Created expense-tracker (19 files).
     <li><span class="pick"><a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/litestream.service">litestream.service</a></span><span class="why">15 lines. Continuous SQLite replication to R2.</span></li>
     <li><span class="pick"><a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/litestream.yml">litestream.yml</a></span><span class="why">10 lines. R2 destination, env-var secrets.</span></li>
   </ul>
+</section>
+
+<section>
+  <h2>The movement</h2>
+  <p>Boring Stack is for builders who would rather ship a small, understandable system than rent a distributed platform before the product earns it. The movement is the public practice: publish the defaults, publish the costs, publish the failures, and make the simple path easier to choose next time.</p>
+  <p>The repo gives agents better defaults. The newsletter keeps those defaults honest by showing how they hold up in real products built by people running the stack.</p>
 </section>
 
 <footer>

@@ -49,6 +49,59 @@ p.subhead {
   max-width: var(--content-max); margin: 0 auto 48px;
 }
 
+/* --- homepage hero -------------------------------------------------------
+   The hero is sized against one constraint: the install command must be
+   reachable without scrolling on a phone. Everything above it stays tight, and
+   the stack list collapses to a wrapped inline row on narrow screens rather
+   than spending six lines of vertical budget. */
+
+ul.stack-list {
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 17px; line-height: 1.45;
+  max-width: var(--content-max); margin: 0 auto 20px;
+}
+
+p.negations {
+  color: var(--fg-muted); font-size: 16px; line-height: 1.5;
+  max-width: var(--content-max); margin: 0 auto 24px;
+}
+/* The qualifier is the point of the sentence, not a footnote — own line, full
+   contrast, so it doesn't read as a disclaimer trailing off in grey. */
+p.negations span { display: block; color: var(--fg); margin-top: 2px; }
+
+p.hero-secondary {
+  font-size: 15px; color: var(--fg-muted);
+  max-width: var(--content-max); margin: 12px auto 56px;
+}
+p.hero-secondary a {
+  color: var(--fg-muted); text-decoration: none;
+  border-bottom: 1px solid var(--rule); padding-bottom: 1px;
+}
+p.hero-secondary a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+@media (max-width: 540px) {
+  /* Six stacked lines would push the command below the fold; wrap them into
+     one flowing row with separators instead. */
+  ul.stack-list { display: flex; flex-wrap: wrap; font-size: 15px; margin-bottom: 16px; }
+  ul.stack-list li + li::before { content: "·"; color: var(--fg-muted); margin: 0 8px; }
+  p.negations { font-size: 15px; margin-bottom: 20px; }
+  p.hero-secondary { margin-bottom: 40px; }
+
+  /* Other terminals may scroll horizontally — they're illustrations. This one
+     is the call to action, so the whole command has to be readable without
+     scrolling sideways. Indent the wrapped line so it still reads as one
+     command rather than two.
+     Both classes are named deliberately: pre.terminal sets `white-space: pre`
+     further down this file, and at equal specificity it would win on source
+     order. */
+  pre.terminal.terminal-cta {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+}
+
 pre.terminal {
   font-family: var(--font-mono); font-size: 15px; line-height: 1.6;
   background: var(--fg); color: var(--bg); padding: 24px; border-radius: 4px;
