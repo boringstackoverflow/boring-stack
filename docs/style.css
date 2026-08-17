@@ -37,6 +37,16 @@ nav.topbar .nameplate img { display: block; width: 22px; height: 22px; border-ra
 nav.topbar .links a { color: var(--fg); text-decoration: none; margin-left: 16px; }
 nav.topbar .links a:hover { color: var(--accent); text-decoration: underline; }
 
+/* Kicker above the hero headline. Lowercase mono to match the nav's voice, so
+   it reads as a label on the headline rather than competing with it.
+   Needs the same max-width + auto margins as h1.hero or it won't share the
+   headline's left edge. */
+p.eyebrow {
+  font-family: var(--font-mono); font-size: 14px;
+  color: var(--fg-muted);
+  max-width: var(--content-max); margin: 0 auto 12px;
+}
+
 h1.hero {
   font-family: var(--font-display); font-weight: 700;
   font-size: clamp(40px, 8vw, 64px); line-height: 1.1; letter-spacing: -0.02em;
