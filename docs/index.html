@@ -129,12 +129,15 @@ resend (free tier)    <span class="num">$0.00</span>
 
   <p>That clones the repo to <code>~/.boring-stack</code>, builds the CLI into <code>~/.local/bin</code> when Go 1.22+ is available, and wires the skill into tools that have a user-level config. Then make the idea concrete:</p>
 
-  <pre class="terminal" aria-label="create and run a project"
-       data-copy="boringstack new myapp&#10;cd myapp&#10;boringstack dev">
-<span class="prompt">$</span> boringstack new myapp
-<span class="prompt">$</span> cd myapp
-<span class="prompt">$</span> boringstack dev
-  </pre>
+  <pre class="terminal" aria-label="create a Boring Stack app">
+<span class="prompt">$</span> boringstack new expense-tracker
+Created expense-tracker (19 files).
+→ go test ./...       <span class="num">ok</span>
+→ go build .          <span class="num">ok</span>
+
+<span class="prompt">$</span> cd expense-tracker &amp;&amp; boringstack dev
+→ running <span class="total">http://localhost:8080</span>
+</pre>
 
   <p>Or tell your coding agent: <code>Build me an expense-tracking SaaS using Boring Stack.</code> The agent starts from the same scaffold and adds a complete feature slice instead of another abstract stack recommendation.</p>
 
