@@ -6,7 +6,15 @@
     <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 16 Aug 2026 07:38:34 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 22 Aug 2026 04:40:25 +0000</lastBuildDate>
+
+    <item>
+      <title>Boring Stack is now something you can run</title>
+      <link>https://boringstack.org/issues/2026-08-22-boring-stack-is-now-something-you-can-run.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/2026-08-22-boring-stack-is-now-something-you-can-run.html</guid>
+      <pubDate>Sat, 22 Aug 2026 04:40:25 +0000</pubDate>
+      <description>Generate a tested Go app and run it locally in one terminal session. The CLI turns the stack's opinions into 19 files that format, test, and build before it reports success.</description>
+    </item>
 
     <item>
       <title>The single Go binary deploy</title>

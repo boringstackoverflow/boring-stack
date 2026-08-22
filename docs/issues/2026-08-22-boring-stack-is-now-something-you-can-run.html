@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boring Stack is now something you can run — Boring Stack</title>
+<meta name="description" content="Generate a tested Go app and run it locally in one terminal session. The CLI turns the stack&#39;s opinions into 19 files that format, test, and build before it reports success.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-08-22-boring-stack-is-now-something-you-can-run.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Boring Stack is now something you can run">
+<meta property="og:description" content="Generate a tested Go app and run it locally in one terminal session. The CLI turns the stack&#39;s opinions into 19 files that format, test, and build before it reports success.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-08-22-boring-stack-is-now-something-you-can-run.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-08-22">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../"><img src="../favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="../showcase.html">showcase</a>
+    <a href="./">issues</a>
+    <a href="../#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">August 22, 2026 · issue #9</p>
+  <h1>Boring Stack is now something you can run</h1>
+  <p>Boring Stack started as an AI coding skill.</p>
+<p>You installed it, your coding agent received a set of defaults, and the next project was less likely to begin with infrastructure it had not earned.</p>
+<p>That was useful, but abstract. You had to take the defaults on faith, because there was nothing to run.</p>
+<p>Today Boring Stack becomes something you can see and run:</p>
+<pre><code class="language-bash">curl -fsSL https://boringstack.org/install.sh | bash
+boringstack new myapp
+cd myapp
+boringstack dev
+</code></pre>
+<p>
+  <a href="https://boringstack.org/?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=cli_launch">
+    <img src="https://boringstack.org/assets/boringstack-new.gif"
+         alt="Terminal recording showing the Boring Stack installer, boringstack new myapp creating 19 files, Go format/test/build checks passing, and the generated app starting on localhost."
+         width="960" height="576"
+         style="max-width:100%;height:auto;border-radius:6px;border:1px solid #e8e6df;">
+  </a>
+</p>
+<p><em>No jump cuts and no staged output: install Boring Stack, generate a tested Go app, and run it locally in one terminal session.</em></p>
+<h2 id="what-the-generator-actually-writes">What the generator actually writes</h2>
+<p><code>boringstack new myapp</code> creates <strong>19 files</strong>: a small Go app and its test, HTML templates, static CSS, <code>STACK.md</code>, <code>AGENTS.md</code>, data and migration directories, and the production deploy files — Caddy, systemd, Litestream, and a shell deploy script you can read start to finish.</p>
+<p>Then it runs <code>go fmt</code>, <code>go test</code>, and <code>go build</code>. It does not report success until those checks pass.</p>
+<p>That last part is the difference worth arguing about. Most generators hand you a directory and wish you luck. This one refuses to claim success for something it has not compiled and tested.</p>
+<h2 id="it-is-a-baseline-not-a-product">It is a baseline, not a product</h2>
+<p>This is not a finished SaaS. It is the production-shaped starting point — the operational decisions already made, the deploy path already written down. From there you write the feature yourself, or you ask your coding agent:</p>
+<pre><code class="language-text">Build me an expense-tracking SaaS using Boring Stack.
+</code></pre>
+<p>The CLI and the skill start from the same scaffold. The agent keeps going into the product slice.</p>
+<h2 id="what-it-needs-plainly">What it needs, plainly</h2>
+<p>The installer clones or updates Boring Stack and builds the CLI when <strong>Go 1.22+</strong> is available. If Go is missing, it says so, skips the CLI, and still installs the AI skill where supported.</p>
+<p><code>boringstack doctor --deploy</code> checks your local deploy prerequisites before you go looking for them at 2am. <code>boringstack deploy</code> uses that checked-in shell path, and it needs a target host and a health-check URL — it is not zero-configuration hosting. The host, the domain, the credentials, and the Litestream configuration are still yours to set up.</p>
+<p>Boring Stack is MIT licensed and stays that way. Read every file, change the defaults, or tell us where they are wrong — the defaults only improve when people try to break them.</p>
+<p>Try it: <a href="https://boringstack.org/?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=cli_launch">boringstack.org</a></p>
+<p>Source: <a href="https://github.com/boringstackoverflow/boring-stack">github.com/boringstackoverflow/boring-stack</a></p>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT / <a href="mailto:hello@boringstack.org">hello@boringstack.org</a></span>
+</footer>
+
+<noscript><img src="https://api.boringstack.org/v1/px.gif?p=/issues" alt="" width="1" height="1" style="position:absolute"></noscript>
+<script src="../analytics.js"></script>
+
+</body>
+</html>
