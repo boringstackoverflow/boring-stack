@@ -1,0 +1,49 @@
+{
+  "generated_at": "2026-08-22T03:42:58Z",
+  "window_days": 30,
+  "measured_through": "2026-08-22",
+  "count": 2,
+  "projects": [
+    {
+      "slug": "borela",
+      "name": "Borela",
+      "url": "https://borela.dev",
+      "stack": [
+        "go",
+        "sqlite",
+        "litestream",
+        "caddy",
+        "systemd",
+        "hetzner",
+        "r2"
+      ],
+      "builder": "@boringstack",
+      "lesson": "The whole control plane — marketing, magic-link auth, dashboard, the locked v1 agent protocol, a dev mailer — is one Go binary and one SQLite file. Nothing about it is distributed, and the restore drill runs every five minutes.",
+      "monthly_cost": "7.84",
+      "monthly_cost_label": "$7.84/mo",
+      "badge_views": 0,
+      "badge_views_label": "0",
+      "listed_on": "2026-08-22"
+    },
+    {
+      "slug": "boring-stack",
+      "name": "Boring Stack",
+      "url": "https://boringstack.org",
+      "stack": [
+        "go",
+        "sqlite",
+        "caddy",
+        "systemd",
+        "hetzner",
+        "r2"
+      ],
+      "builder": "@boringstack",
+      "lesson": "This site's own backend ships no backup tooling at all. borela-agent already runs on the box, so it snapshots the SQLite file to R2 and the restore drill comes free. Running Litestream alongside it would have meant two sets of credentials to rotate and one more thing to explain.",
+      "monthly_cost": "5.96",
+      "monthly_cost_label": "$5.96/mo",
+      "badge_views": 0,
+      "badge_views_label": "0",
+      "listed_on": "2026-08-22"
+    }
+  ]
+}
