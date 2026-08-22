@@ -2,16 +2,18 @@
 //
 // Reads:  ../docs/issues/<slug>.md (markdown with --- YAML frontmatter)
 // Writes: ../docs/issues/<slug>.html
-//         ../docs/issues/index.html
-//         ../docs/feed.xml
+//
+//	../docs/issues/index.html
+//	../docs/feed.xml
 //
 // Frontmatter:
-//   ---
-//   title: "Restore drill #1"
-//   date: 2026-05-09
-//   summary: "Optional one-liner."
-//   draft: false
-//   ---
+//
+//	---
+//	title: "Restore drill #1"
+//	date: 2026-05-09
+//	summary: "Optional one-liner."
+//	draft: false
+//	---
 //
 // `draft: true` adds <meta name="newsletter-draft" content="true"> to the
 // rendered page, which BSB's auto-send worker reads and treats as "skip".
@@ -19,9 +21,11 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -37,11 +41,19 @@ import (
 )
 
 const (
-	issuesDir   = "../docs/issues"
-	feedPath    = "../docs/feed.xml"
-	indexPath   = "../docs/issues/index.html"
-	templateDir = "templates"
+	issuesDir        = "../docs/issues"
+	feedPath         = "../docs/feed.xml"
+	indexPath        = "../docs/issues/index.html"
+	showcaseDataPath = "../docs/showcase.json" // written by `bsb showcase export`
+	showcasePath     = "../docs/showcase.html"
+	templateDir      = "templates"
 )
+
+// imageDir holds preview images written by `go run ./images`. A var, not a
+// const, so tests can point it at a temp dir.
+var imageDir = "../docs/showcase"
+
+func setImageDir(d string) { imageDir = d }
 
 type Issue struct {
 	Slug      string
@@ -58,14 +70,19 @@ type Issue struct {
 
 func main() {
 	log.SetFlags(0)
+	buildIssues()
+	buildShowcase()
+}
 
+// buildIssues renders the issue pages, the archive index, and the RSS feed.
+func buildIssues() {
 	mds, err := filepath.Glob(filepath.Join(issuesDir, "*.md"))
 	if err != nil {
 		log.Fatalf("glob: %v", err)
 	}
 	sort.Strings(mds)
 	if len(mds) == 0 {
-		log.Printf("no markdown issues found in %s — wrote nothing", issuesDir)
+		log.Printf("no markdown issues found in %s — skipping issues", issuesDir)
 		return
 	}
 
@@ -153,6 +170,146 @@ func main() {
 	feedF.Close()
 	log.Printf("wrote %s", feedPath)
 	log.Printf("done — %d issue(s)", len(issues))
+}
+
+// --- showcase ---
+
+// Showcase mirrors the JSON that `bsb showcase export` writes. Only the fields
+// the page renders are here: the exporter is the allowlist that decides what
+// becomes public, and this struct is deliberately not a superset of it.
+type Showcase struct {
+	GeneratedAt     string            `json:"generated_at"`
+	WindowDays      int               `json:"window_days"`
+	MeasuredThrough string            `json:"measured_through"`
+	Count           int               `json:"count"`
+	Projects        []ShowcaseProject `json:"projects"`
+}
+
+type ShowcaseProject struct {
+	Slug             string   `json:"slug"`
+	Name             string   `json:"name"`
+	URL              string   `json:"url"`
+	RepoURL          string   `json:"repo_url"`
+	Stack            []string `json:"stack"`
+	Builder          string   `json:"builder"`
+	Lesson           string   `json:"lesson"`
+	MonthlyCost      string   `json:"monthly_cost"`
+	MonthlyCostLabel string   `json:"monthly_cost_label"`
+	BadgeViews       int64    `json:"badge_views"`
+	BadgeViewsLabel  string   `json:"badge_views_label"`
+	ListedOn         string   `json:"listed_on"`
+
+	// Filled in by loadShowcase, not by the exporter.
+	//
+	// Image is the filename under docs/showcase/ if `go run ./images` has
+	// fetched one — a purely local filesystem check, so `make build` stays
+	// offline and deterministic. Empty means the card renders a placeholder
+	// instead, which is a normal state, not an error.
+	Image string `json:"-"`
+	// Host is the bare hostname, shown in that placeholder.
+	Host string `json:"-"`
+	// BuilderURL is the X profile for Builder, or "" to render it as plain
+	// text. See builderProfileURL for why it is not always set.
+	BuilderURL string `json:"-"`
+}
+
+// loadShowcase reads the file `bsb showcase export` produces.
+//
+// Tolerant by design, the same posture as loadPriorPubDates: a missing or
+// unreadable file means "no showcase data here", not a broken build. A
+// contributor who has never run the exporter must still be able to `make
+// build` without touching the backend.
+func loadShowcase(path string) (*Showcase, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var s Showcase
+	if err := json.Unmarshal(data, &s); err != nil {
+		return nil, fmt.Errorf("parse %s: %w", path, err)
+	}
+	if s.WindowDays == 0 {
+		s.WindowDays = 30
+	}
+	// Trust the array, not the exporter's own count field.
+	s.Count = len(s.Projects)
+
+	for i := range s.Projects {
+		s.Projects[i].Host = hostOf(s.Projects[i].URL)
+		s.Projects[i].Image = findShowcaseImage(s.Projects[i].Slug)
+		s.Projects[i].BuilderURL = builderProfileURL(s.Projects[i].Builder)
+	}
+	return &s, nil
+}
+
+// findShowcaseImage returns the filename of a fetched preview image, or "".
+// Extensions are tried in the order `go run ./images` prefers to write them.
+func findShowcaseImage(slug string) string {
+	for _, ext := range []string{".jpg", ".png", ".webp", ".gif"} {
+		if _, err := os.Stat(filepath.Join(imageDir, slug+ext)); err == nil {
+			return slug + ext
+		}
+	}
+	return ""
+}
+
+// xUsername is stricter than the backend's handle sanitizer, which allows
+// "." and "-" so a handle stays readable for any platform. X usernames are
+// letters, digits and underscore only, up to 15 characters.
+var xUsername = regexp.MustCompile(`^[A-Za-z0-9_]{1,15}$`)
+
+// builderProfileURL turns "@name" into an X profile link, or returns "" so the
+// handle renders as plain text.
+//
+// The showcase stores a bare handle with no platform attached, so linking it
+// anywhere is an assumption. X is the one the rest of this site makes — the
+// footer has linked @boringstack there since the beginning — and a handle that
+// cannot be an X username is left unlinked rather than pointed at a 404.
+//
+// The handle is already stripped to [A-Za-z0-9_.-] by the backend before it is
+// ever exported; this narrowing is belt-and-braces, and means nothing that
+// reaches an href was chosen by a submitter.
+func builderProfileURL(builder string) string {
+	name := strings.TrimPrefix(builder, "@")
+	if !xUsername.MatchString(name) {
+		return ""
+	}
+	return "https://x.com/" + name
+}
+
+func hostOf(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimPrefix(strings.ToLower(u.Hostname()), "www.")
+}
+
+// buildShowcase renders docs/showcase.html from docs/showcase.json.
+//
+// html/template, never text/template: every field below is submitter-supplied.
+// Escaping in the URL attribute context is what turns a javascript: href into
+// #ZgotmplZ instead of stored XSS on the apex domain.
+func buildShowcase() {
+	data, err := loadShowcase(showcaseDataPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Printf("no %s — skipping %s (run `bsb showcase export`)", showcaseDataPath, showcasePath)
+			return
+		}
+		log.Fatalf("showcase: %v", err)
+	}
+
+	t := template.Must(template.ParseFiles(filepath.Join(templateDir, "showcase.html.tmpl")))
+	f, err := os.Create(showcasePath)
+	if err != nil {
+		log.Fatalf("create %s: %v", showcasePath, err)
+	}
+	defer f.Close()
+	if err := t.Execute(f, data); err != nil {
+		log.Fatalf("render showcase: %v", err)
+	}
+	log.Printf("wrote %s — %d listing(s)", showcasePath, data.Count)
 }
 
 func parseIssue(path string, md goldmark.Markdown) (*Issue, error) {

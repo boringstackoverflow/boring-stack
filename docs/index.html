@@ -53,6 +53,7 @@
   <span class="nameplate"><a href="./"><img src="favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
   <span class="links">
     <a href="manifesto.html">manifesto</a>
+    <a href="showcase.html">showcase</a>
     <a href="issues/">issues</a>
     <a href="#newsletter">newsletter</a>
     <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
@@ -242,6 +243,7 @@ Created expense-tracker (19 files).
   up. That ordering is the whole mitigation; do not merge these two blocks.
 -->
 <script src="analytics.js"></script>
+<script src="copy.js"></script>
 
 <script>
 // Fallbacks in case analytics.js was blocked, 404'd, or threw. The features
@@ -302,30 +304,6 @@ if (typeof bsFirstTouch !== 'function') { bsFirstTouch = function () { return {}
   });
 })();
 
-// ── Copy buttons for any <pre class="terminal" data-copy="..."> ────────────
-(function () {
-  document.querySelectorAll('pre.terminal[data-copy]').forEach(function (pre) {
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'copy-btn';
-    btn.textContent = 'copy';
-    btn.setAttribute('aria-label', 'copy command to clipboard');
-    btn.addEventListener('click', function () {
-      navigator.clipboard.writeText(pre.dataset.copy).then(function () {
-        btn.textContent = 'copied';
-        btn.dataset.state = 'copied';
-        setTimeout(function () { btn.textContent = 'copy'; delete btn.dataset.state; }, 1500);
-        // Only after the clipboard write actually resolved, and never allowed to
-        // interfere with the "copied" label the user is waiting to see.
-        try { bsEvent('install_copy', { label: pre.getAttribute('aria-label') || '' }); } catch (e) {}
-      }).catch(function () {
-        btn.textContent = 'failed';
-        setTimeout(function () { btn.textContent = 'copy'; }, 1500);
-      });
-    });
-    pre.appendChild(btn);
-  });
-})();
 </script>
 
 </body>

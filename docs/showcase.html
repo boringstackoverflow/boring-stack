@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Showcase — Built with Boring Stack</title>
+<meta name="description" content="Real products running on Go, SQLite, Litestream, Caddy and a $5 VPS — with what they actually cost to run and one lesson each.">
+<link rel="canonical" href="https://boringstack.org/showcase.html">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Showcase — Built with Boring Stack">
+<meta property="og:description" content="Real products running on Go, SQLite, Litestream, Caddy and a $5 VPS — with what they actually cost to run and one lesson each.">
+<meta property="og:url" content="https://boringstack.org/showcase.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Showcase — Built with Boring Stack">
+<meta name="twitter:description" content="Real products, real bills, one lesson each.">
+<meta name="twitter:image" content="https://boringstack.org/og-image.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="./"><img src="favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="manifesto.html">manifesto</a>
+    <a href="showcase.html">showcase</a>
+    <a href="issues/">issues</a>
+    <a href="index.html#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<p class="eyebrow">real products, real bills, one lesson each</p>
+<h1 class="hero">Built with Boring Stack<span class="dot">.</span></h1>
+<p class="subhead">2 shipped products running on a stack their builders can read end to end. Costs are self-reported. Badge views are measured — that's the number we can actually check.</p>
+
+<section>
+  <ol class="showcase-grid">
+
+    <li class="showcase-card">
+      
+      <div class="showcase-shot"><img src="showcase/borela.png" alt="Borela" width="1200" height="630" loading="lazy" decoding="async"></div>
+      
+      <div class="showcase-body">
+        <p class="showcase-head">
+          <a class="showcase-name" href="https://borela.dev" rel="noopener">Borela</a>
+          <span class="showcase-cost">$7.84/mo</span>
+        </p>
+        <ul class="stack-tags"><li>go</li><li>sqlite</li><li>litestream</li><li>caddy</li><li>systemd</li><li>hetzner</li><li>r2</li></ul>
+        <p class="showcase-lesson">The whole control plane — marketing, magic-link auth, dashboard, the locked v1 agent protocol, a dev mailer — is one Go binary and one SQLite file. Nothing about it is distributed, and the restore drill runs every five minutes.</p>
+        <p class="showcase-meta">
+          <a href="https://x.com/boringstack" rel="noopener">@boringstack</a>
+          
+          
+          <span>listed 2026-08-22</span>
+        </p>
+      </div>
+    </li>
+
+    <li class="showcase-card">
+      
+      <div class="showcase-shot"><img src="showcase/boring-stack.png" alt="Boring Stack" width="1200" height="630" loading="lazy" decoding="async"></div>
+      
+      <div class="showcase-body">
+        <p class="showcase-head">
+          <a class="showcase-name" href="https://boringstack.org" rel="noopener">Boring Stack</a>
+          <span class="showcase-cost">$5.96/mo</span>
+        </p>
+        <ul class="stack-tags"><li>go</li><li>sqlite</li><li>caddy</li><li>systemd</li><li>hetzner</li><li>r2</li></ul>
+        <p class="showcase-lesson">This site&#39;s own backend ships no backup tooling at all. borela-agent already runs on the box, so it snapshots the SQLite file to R2 and the restore drill comes free. Running Litestream alongside it would have meant two sets of credentials to rotate and one more thing to explain.</p>
+        <p class="showcase-meta">
+          <a href="https://x.com/boringstack" rel="noopener">@boringstack</a>
+          
+          
+          <span>listed 2026-08-22</span>
+        </p>
+      </div>
+    </li>
+
+  </ol>
+  <p class="tip">costs are self-reported and unverified. badge views are measured by api.boringstack.org through 2026-08-22, and are badge fetches rather than pageviews — close enough to compare listings against each other, not an audited number. previews are each site's own og:image, or a screenshot of its homepage, fetched once and served from this domain — your browser never calls out to a listed site.</p>
+</section>
+
+<section id="badge">
+  <h2>The badge</h2>
+  <p>Built something on this stack? Paste this anywhere on your site. The footer is traditional.</p>
+
+  <pre class="terminal" aria-label="badge snippet" data-copy-event="showcase_badge_copy" data-copy="&lt;a href=&quot;https://boringstack.org/showcase.html&quot;&gt;&lt;img src=&quot;https://api.boringstack.org/badge.svg&quot; alt=&quot;Built with Boring Stack&quot; width=&quot;186&quot; height=&quot;28&quot; loading=&quot;lazy&quot;&gt;&lt;/a&gt;">
+&lt;a href="https://boringstack.org/showcase.html"&gt;
+  &lt;img src="https://api.boringstack.org/badge.svg"
+       alt="Built with Boring Stack" width="186" height="28" loading="lazy"&gt;
+&lt;/a&gt;</pre>
+
+  <p>It renders like this, and follows your visitor's light or dark preference:</p>
+  <p><a href="#badge"><img src="https://api.boringstack.org/badge.svg" alt="Built with Boring Stack" width="186" height="28"></a></p>
+
+  <p>Once your project is listed you get a per-project URL — <code>/badge/&lt;your-slug&gt;.svg</code> — which is the same image but attributes views to your listing. We'll send it with your confirmation email.</p>
+
+  <h3>What the badge records</h3>
+  <p>When a browser loads the badge, <code>api.boringstack.org</code> records exactly one thing: <strong>the hostname of the page it was loaded from</strong> — <code>example.com</code>, never the path, never the query string — added to a counter bucketed by day.</p>
+
+  <ul class="pushbacks">
+    <li><span class="reflex">IP addresses</span><span><span class="pick">not recorded</span><span class="why">Not stored, not hashed, not logged.</span></span></li>
+    <li><span class="reflex">cookies, localStorage</span><span><span class="pick">none</span><span class="why">It's an image. Images can't set them and this one doesn't try.</span></span></li>
+    <li><span class="reflex">visitor identity</span><span><span class="pick">none</span><span class="why">There is no visitor hash and no per-visitor row. A badge has no visitor.</span></span></li>
+    <li><span class="reflex">one row per request</span><span><span class="pick">one counter per host per day</span><span class="why">Ten thousand loads from one site in one day is a single row with the number 10000 in it.</span></span></li>
+  </ul>
+
+  <p class="tip">the unlisted badge is counted the same way, by hostname only. that's how we find projects using it that haven't been listed — and then we email them, once.</p>
+</section>
+
+<section id="submit">
+  <h2>List your project</h2>
+  <div class="signup primary stacked">
+    <h3>Add it to the showcase</h3>
+    <p>A human reads every submission. We check the badge is live on your site before listing you — that check is the only proof of ownership we have.</p>
+    <form id="showcase-form"
+          action="https://api.boringstack.org/v1/showcase/submit"
+          method="post" autocomplete="on" target="_top">
+      <label>project name <input type="text" name="name" required maxlength="60" placeholder="TinyCRM"></label>
+      <label>url <input type="url" name="url" required maxlength="200" placeholder="https://tinycrm.example"></label>
+      <label>repo <span class="opt">(optional)</span> <input type="url" name="repo_url" maxlength="200" placeholder="https://github.com/you/tinycrm"></label>
+      <label>stack <input type="text" name="stack" maxlength="120" placeholder="go, sqlite, litestream, caddy, hetzner"></label>
+      <label>monthly cost <span class="opt">(optional, self-reported)</span> <input type="text" name="cost" maxlength="12" inputmode="decimal" placeholder="5.84"></label>
+      <label>your handle <span class="opt">(optional)</span> <input type="text" name="builder" maxlength="40" placeholder="@you"></label>
+      <label>one lesson <textarea name="lesson" required maxlength="280" rows="3" placeholder="The thing you'd tell someone starting the same project."></textarea></label>
+      <label>your email <input type="email" name="email" required placeholder="you@vps.lan"></label>
+      <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button type="submit">Submit for review</button>
+    </form>
+    <p class="signup-status" id="showcase-status" hidden role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+<footer>
+  <span><a href="index.html#newsletter">subscribe</a> · <a href="feed.xml">rss</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT</span>
+</footer>
+
+<noscript><img src="https://api.boringstack.org/v1/px.gif?p=/showcase" alt="" width="1" height="1" style="position:absolute"></noscript>
+<script src="analytics.js"></script>
+<script src="copy.js"></script>
+<script>
+
+
+
+
+
+
+
+
+
+
+
+if (typeof bsEvent !== 'function') { bsEvent = function () {}; }
+if (typeof bsFirstTouch !== 'function') { bsFirstTouch = function () { return {}; }; }
+
+(function () {
+  var form = document.getElementById('showcase-form');
+  var status = document.getElementById('showcase-status');
+  if (!form || !status) return;
+  var action = form.getAttribute('action');
+  if (!action) return;
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var btn = form.querySelector('button[type=submit]');
+    var prev = btn.textContent;
+    btn.disabled = true; btn.textContent = 'sending…'; status.hidden = true;
+
+    var body = new URLSearchParams(new FormData(form));
+    try {                       
+      var ft = bsFirstTouch();
+      if (ft.id) body.set('attribution_id', ft.id);
+      if (ft.src) body.set('utm_source', ft.src);
+      if (ft.campaign) body.set('utm_campaign', ft.campaign);
+      if (ft.ref) body.set('ref', ft.ref);
+    } catch (e) {   }
+
+    fetch(action, { method: 'POST', mode: 'no-cors', body: body })
+      .then(function () {
+        form.reset();
+        status.textContent = "Got it — check your inbox for the confirmation link. Your project isn't in the review queue until you click it.";
+        status.hidden = false;
+      })
+      .catch(function () {
+        status.textContent = "Couldn't reach the submit endpoint. Try again, or email boringstackoverflow@gmail.com.";
+        status.hidden = false;
+      })
+      .finally(function () { btn.disabled = false; btn.textContent = prev; });
+  });
+})();
+</script>
+
+</body>
+</html>
