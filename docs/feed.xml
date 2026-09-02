@@ -6,7 +6,15 @@
     <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 22 Aug 2026 04:40:25 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 02 Sep 2026 04:50:25 +0000</lastBuildDate>
+
+    <item>
+      <title>Your backup agent can't read your database</title>
+      <link>https://boringstack.org/issues/2026-09-01-your-backup-agent-cant-read-your-database.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/2026-09-01-your-backup-agent-cant-read-your-database.html</guid>
+      <pubDate>Wed, 02 Sep 2026 04:49:23 +0000</pubDate>
+      <description>A backup that runs on schedule, reports success, and copies nothing is the most expensive kind. Unix path traversal and SQLite's WAL file each produce one, and neither raises an error. Here is how to check yours in one command.</description>
+    </item>
 
     <item>
       <title>Boring Stack is now something you can run</title>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your backup agent can&#39;t read your database — Boring Stack</title>
+<meta name="description" content="A backup that runs on schedule, reports success, and copies nothing is the most expensive kind. Unix path traversal and SQLite&#39;s WAL file each produce one, and neither raises an error. Here is how to check yours in one command.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-09-01-your-backup-agent-cant-read-your-database.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Your backup agent can&#39;t read your database">
+<meta property="og:description" content="A backup that runs on schedule, reports success, and copies nothing is the most expensive kind. Unix path traversal and SQLite&#39;s WAL file each produce one, and neither raises an error. Here is how to check yours in one command.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-09-01-your-backup-agent-cant-read-your-database.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-09-01">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../"><img src="../favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="../showcase.html">showcase</a>
+    <a href="./">issues</a>
+    <a href="../#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">September 1, 2026 · issue #10</p>
+  <h1>Your backup agent can&#39;t read your database</h1>
+  <p>The worst backup is not the one that fails. It is the one that runs on schedule, exits zero, logs nothing unusual, and copies nothing.</p>
+<p>Two things produce that outcome on a boring stack, and neither one raises an error. The first is a directory your backup user cannot walk through. The second is a SQLite file that holds almost none of your data.</p>
+<p>Both are checkable in a single command. Most people never run it, because the obvious way to check hides the problem.</p>
+<h2 id="the-boring-default">The boring default</h2>
+<p>Run the backup agent as its own user, and give it read access to the database with a POSIX ACL:</p>
+<pre><code class="language-sh">setfacl -m u:borela:rx /home/bsb/app/data
+setfacl -m u:borela:r  /home/bsb/app/data/app.db
+</code></pre>
+<p>That looks complete. It grants read on the directory and read on the file, and <code>setfacl</code> exits zero for both.</p>
+<p>It can still back up nothing.</p>
+<h2 id="why-it-silently-fails">Why it silently fails</h2>
+<p><code>useradd -r bsb</code> creates <code>/home/bsb</code> as mode <code>0750</code>, owned by <code>bsb:bsb</code>. A user that is neither <code>bsb</code> nor a member of group <code>bsb</code> has no execute bit on that directory, and on Unix the execute bit on a directory is permission to <em>traverse</em> it — to resolve a name inside it at all.</p>
+<p>So the ACL on <code>/home/bsb/app/data</code> is correct, and unreachable. The kernel refuses at <code>/home/bsb</code>, three levels up, before the grant you wrote is ever consulted.</p>
+<p>The reason this survives code review is the failure mode. The agent does not get far enough to open a file, so it has no file error to report. There is no permission denied in the log, because nothing was denied at the point where the code checks. The unit runs. The timer fires. The dashboard is green.</p>
+<p>This exact bug shipped in the Boring Stack backend&rsquo;s own <code>setup.sh</code> and sat there until August 16. The database had never once been readable by the backup agent. The script granted the ACL and asserted it had worked, which is not the same as finding out.</p>
+<h2 id="the-second-silent-failure-wal">The second silent failure: WAL</h2>
+<p>SQLite in WAL mode does not write committed transactions into the main database file right away. They accumulate in <code>app.db-wal</code> until a checkpoint folds them in.</p>
+<p>An agent that has read access to <code>app.db</code> and not to <code>app.db-wal</code> therefore backs up a file that is real, valid, openable — and arbitrarily stale. It might be missing an hour of writes. It might be missing everything since the last checkpoint, which on a low-traffic app can be a long time.</p>
+<p>This one is worse than the traversal bug, because it produces an artifact. You get a backup file. It passes an integrity check. It is simply not your database.</p>
+<p>Grant all three:</p>
+<pre><code class="language-sh">for f in app.db app.db-wal app.db-shm; do
+  setfacl -m u:borela:r &quot;/home/bsb/app/data/$f&quot;
+done
+</code></pre>
+<h2 id="the-trade-off">The trade-off</h2>
+<p>ACLs are the smallest tool that solves this. They keep the app&rsquo;s home directory closed to everyone else and open one narrow path for one user.</p>
+<p>The cost is that they are invisible. <code>ls -l</code> shows a <code>+</code> at the end of the mode string and nothing else; you need <code>getfacl</code> to see what is actually granted. A teammate reading the directory listing will not know the rule exists, and a restore onto a fresh box will not have it unless the setup script applies it. That is a real argument for the alternative: put the backup user in a group, give the group traversal, and let <code>ls -l</code> tell the whole story.</p>
+<p>Use the group when more than one process needs the path. Use the ACL when exactly one does, as here — <code>x</code> for traversal, never <code>rx</code>, because the backup agent has no business listing the contents of your home directory.</p>
+<h2 id="copypaste-grant-then-verify">Copy/paste: grant, then verify</h2>
+<p>The grant is the part everyone writes. The verification is the part that matters:</p>
+<pre><code class="language-sh"># Traversal on every directory in the path. x only, not rx.
+setfacl -m u:borela:x  /home/bsb
+setfacl -m u:borela:x  /home/bsb/app
+setfacl -m u:borela:rx /home/bsb/app/data
+
+# Future files inherit read.
+setfacl -d -m u:borela:r /home/bsb/app/data
+
+# The WAL and shared-memory files, not just the database.
+for f in app.db app.db-wal app.db-shm; do
+  [ -f &quot;/home/bsb/app/data/$f&quot; ] &amp;&amp; setfacl -m u:borela:r &quot;/home/bsb/app/data/$f&quot;
+done
+
+# Verify as the actual user. This is the whole point.
+if sudo -u borela test -r /home/bsb/app/data/app.db; then
+  echo &quot;✓ borela can read app.db&quot;
+else
+  echo &quot;✗ borela cannot read app.db — backups will NOT work&quot;
+  sudo -u borela ls -l /home/bsb/app/data/
+fi
+</code></pre>
+<p>Put those last five lines in your setup script, not in your head. A grant that is never tested is a comment.</p>
+<h2 id="the-mistake-that-hides-all-of-this">The mistake that hides all of this</h2>
+<p>Checking the path as root.</p>
+<p>Root ignores the permission bits. <code>ls -l /home/bsb/app/data/app.db</code> as root prints the file, confirms it exists, shows a sane mode, and tells you nothing whatsoever about whether <code>borela</code> can open it. Every debugging session that begins with <code>sudo ls</code> ends with &ldquo;looks fine to me.&rdquo;</p>
+<p>The check has to run as the user that will do the work:</p>
+<pre><code class="language-sh">sudo -u borela test -r /home/bsb/app/data/app.db
+</code></pre>
+<p>Same shape as the general rule. Do not verify a backup by looking at the backup job. Verify it by being the thing that reads.</p>
+<h2 id="checking-what-came-back">Checking what came back</h2>
+<p>Once the file is genuinely readable and genuinely current, the restore side has its own version of the same trap. SQLite&rsquo;s own integrity test:</p>
+<pre><code class="language-sh">sqlite3 app.db &quot;PRAGMA integrity_check;&quot;
+</code></pre>
+<p>returns:</p>
+<pre><code class="language-text">ok
+</code></pre>
+<p>That proves the file is internally coherent. It does not prove it contains your data — an empty database returns <code>ok</code>, and so does a three-week-old one.</p>
+<p>Check the contents against something you know:</p>
+<ul>
+<li>the applied schema-migration version</li>
+<li>row counts on the tables that should never be empty</li>
+<li>the newest timestamp in your busiest table, compared against production</li>
+<li>one real application read, through the actual server, against the restored file</li>
+</ul>
+<p>The last one is the only check that exercises the same code path your users do.</p>
+<h2 id="failure-mode">Failure mode</h2>
+<p>Everything green, nothing backed up. No alert fires, because nothing errored. You discover it the first time you need the backup, which is the worst possible moment to discover anything.</p>
+<p>The tell, if you go looking: a backup destination whose object size never changes, or changes far less than your database does.</p>
+<h2 id="outgrow-path">Outgrow path</h2>
+<p>When the app grows past one process reading one file — a second service that needs the same database, a read replica, a separate reporting job — stop patching ACLs onto a private home directory. Move the data out to a shared location with a real group (<code>/srv/app/data</code>, group <code>app-data</code>, mode <code>2750</code>), and let the setgid bit keep new files inside the group.</p>
+<p>The verification step does not change. It is still <code>sudo -u &lt;the user&gt; test -r &lt;the file&gt;</code>, and it still belongs in the script.</p>
+<h2 id="the-one-thing-to-take-away">The one thing to take away</h2>
+<p>Every backup system has a step where you assert a permission and a step where you use it. If those are the same step, you do not have a backup — you have an intention.</p>
+<p>Run the check on your own box now. It takes ten seconds:</p>
+<pre><code class="language-sh">sudo -u YOUR_BACKUP_USER test -r /path/to/your.db &amp;&amp; echo ok || echo BROKEN
+</code></pre>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT / <a href="mailto:hello@boringstack.org">hello@boringstack.org</a></span>
+</footer>
+
+<noscript><img src="https://api.boringstack.org/v1/px.gif?p=/issues" alt="" width="1" height="1" style="position:absolute"></noscript>
+<script src="../analytics.js"></script>
+
+</body>
+</html>
