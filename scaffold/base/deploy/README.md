@@ -28,3 +28,15 @@ the binary if the check fails.
 
 After the first deploy, verify TLS, journald, Litestream snapshots, and a real
 restore with `PRAGMA integrity_check` before treating backups as complete.
+
+That last step is the one people skip. A replica that has never been restored
+is a guess, not a backup, and you find out which on the worst day. Run the
+drill by hand:
+
+```sh
+litestream restore -o /tmp/drill.db <replica-url>
+sqlite3 /tmp/drill.db 'pragma integrity_check'
+```
+
+Put it on a calendar, or have it run every week and page you when it fails:
+<https://api.boringstack.org/r/borela?utm_campaign=scaffold-deploy>.
