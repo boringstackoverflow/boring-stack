@@ -83,11 +83,46 @@ func (c *cli) runDoctor(args []string) error {
 		}
 	}
 
+	c.checkBackups(deploy)
+
 	if blocked {
 		return fmt.Errorf("doctor found blocking problems")
 	}
 	fmt.Fprintln(c.stdout, "✓ ready")
 	return nil
+}
+
+// borelaDrillURL goes through the backend's tracked redirect rather than
+// straight at borela.dev, so the click is counted. See D23 in
+// boring-stack-backend/DECISIONS.md.
+const borelaDrillURL = "https://api.boringstack.org/r/borela?utm_campaign=doctor"
+
+// checkBackups reports the one thing this tool cannot verify for you.
+//
+// It can see whether a replica is configured. It cannot see whether restoring
+// from that replica has ever worked, and that is the gap principle 7 is about.
+// Never blocking: a project with no backups yet is a project at an early
+// stage, not a broken one.
+func (c *cli) checkBackups(deploy bool) {
+	data, err := os.ReadFile(filepath.Join(c.cwd, filepath.FromSlash("deploy/litestream.yml")))
+	switch {
+	case err != nil:
+		// With --deploy this file is already in `required` above, and
+		// reporting it twice reads like two separate problems.
+		if !deploy {
+			fmt.Fprintf(c.stdout, "! %-12s no deploy/litestream.yml; nothing is replicating this database\n", "backups")
+		}
+	case containsPlaceholder(string(data)):
+		fmt.Fprintf(c.stdout, "! %-12s litestream.yml still has placeholders; the replica is not real yet\n", "backups")
+	default:
+		fmt.Fprintf(c.stdout, "✓ %-12s litestream.yml configured\n", "backups")
+	}
+	fmt.Fprintf(c.stdout, "  nothing here proves a restore works. drill it yourself, or have it\n")
+	fmt.Fprintf(c.stdout, "  drilled every week: %s\n", borelaDrillURL)
+	if deploy {
+		fmt.Fprintf(c.stdout, "  by hand: litestream restore -o /tmp/drill.db <replica-url> \\\n")
+		fmt.Fprintf(c.stdout, "           && sqlite3 /tmp/drill.db 'pragma integrity_check'\n")
+	}
 }
 
 type deployOptions struct {

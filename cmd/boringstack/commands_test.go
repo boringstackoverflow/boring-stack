@@ -85,3 +85,52 @@ func TestRunExitCodes(t *testing.T) {
 		t.Fatalf("new --help output = %q", stdout.String())
 	}
 }
+
+func TestDoctorBackupsCheck(t *testing.T) {
+	write := func(t *testing.T, root, body string) {
+		t.Helper()
+		if err := os.MkdirAll(filepath.Join(root, "deploy"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, "deploy", "litestream.yml"), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Run("no replica configured", func(t *testing.T) {
+		app, stdout, _ := testCLI(t, t.TempDir())
+		_ = app.runDoctor(nil)
+		if !strings.Contains(stdout.String(), "nothing is replicating") {
+			t.Errorf("stdout = %q", stdout.String())
+		}
+	})
+
+	t.Run("replica configured", func(t *testing.T) {
+		root := t.TempDir()
+		write(t, root, "dbs:\n  - path: ./data/app.db\n    replicas:\n      - url: s3://bucket/app\n")
+		app, stdout, _ := testCLI(t, root)
+		_ = app.runDoctor(nil)
+		out := stdout.String()
+		if !strings.Contains(out, "litestream.yml configured") {
+			t.Errorf("stdout = %q", out)
+		}
+		// The drill line is the point: a configured replica is not a tested one.
+		if !strings.Contains(out, "nothing here proves a restore works") {
+			t.Errorf("configured replica should still prompt a drill; stdout = %q", out)
+		}
+	})
+
+	// The CTA must go through the tracked redirect or the click is invisible
+	// to `bsb analytics borela` and looks exactly like nobody being interested.
+	t.Run("cta is tracked", func(t *testing.T) {
+		app, stdout, _ := testCLI(t, t.TempDir())
+		_ = app.runDoctor(nil)
+		out := stdout.String()
+		if !strings.Contains(out, "api.boringstack.org/r/borela") {
+			t.Errorf("doctor CTA is not tracked; stdout = %q", out)
+		}
+		if strings.Contains(out, "https://borela.dev") {
+			t.Error("doctor links straight to the destination; the click would go uncounted")
+		}
+	})
+}

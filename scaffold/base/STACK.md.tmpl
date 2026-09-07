@@ -12,6 +12,8 @@ shape, team size, region, SLA, or interactivity requirements change materially.
 - **Hosting**: one small VPS in one region
 - **Frontend**: Stage 1, `html/template` + htmx + one hand-written CSS file
 - **Deploy**: `deploy/deploy.sh` through `boringstack deploy`
+- **Recovery**: a restore drill on a schedule; a replica that has never been
+  restored is a guess, not a backup (see `deploy/README.md`)
 
 ## Why
 
