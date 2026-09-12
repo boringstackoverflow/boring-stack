@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The two health checks a one-VPS app actually needs — Boring Stack</title>
+<meta name="description" content="Your process is running. Your users still cannot reach it. Two small probes distinguish a healthy Go process from a working public HTTPS path.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-09-12-the-two-health-checks-a-one-vps-app-actually-needs.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="The two health checks a one-VPS app actually needs">
+<meta property="og:description" content="Your process is running. Your users still cannot reach it. Two small probes distinguish a healthy Go process from a working public HTTPS path.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-09-12-the-two-health-checks-a-one-vps-app-actually-needs.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-09-12">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../"><img src="../favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="../showcase.html">showcase</a>
+    <a href="./">issues</a>
+    <a href="../#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">September 12, 2026 · issue #11</p>
+  <h1>The two health checks a one-VPS app actually needs</h1>
+  <p>Your service says <code>active (running)</code>. You curl localhost and get <code>ok</code>. A reader opens your site and gets a TLS error.</p>
+<p>All three can be true at once.</p>
+<p>In <a href="2026-05-19-what-broke-in-launch-week.html">launch week</a>, Boring Stack&rsquo;s public API had no matching Caddy server block. Newsletter signups failed at the TLS edge, before an HTTP request could reach the application. A check against localhost would have missed the broken layer entirely.</p>
+<p>A running process is one fact. A working path from a user&rsquo;s machine is another. Check both.</p>
+<h2 id="two-probes-two-jobs">Two probes, two jobs</h2>
+<table>
+<thead>
+<tr>
+<th>Probe</th>
+<th>Run it from</th>
+<th>What it tells you</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local application check</td>
+<td>The app&rsquo;s VPS, directly against Go</td>
+<td>The process can answer a request. A separate readiness check can verify a required database read.</td>
+</tr>
+<tr>
+<td>Public HTTPS check</td>
+<td>Another machine</td>
+<td>This location can reach the expected application through DNS, the network, TLS, and Caddy.</td>
+</tr>
+</tbody>
+</table>
+<p>These are starting points. Neither proves that a signup completes or that a payment succeeds. They do give you a useful first split when someone says the site is down.</p>
+<h2 id="start-with-the-endpoint-you-already-have">Start with the endpoint you already have</h2>
+<p>The <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/scaffold/base/main.go.tmpl">current scaffold</a> includes this handler:</p>
+<pre><code class="language-go">mux.HandleFunc(&quot;GET /healthz&quot;, func(w http.ResponseWriter, _ *http.Request) {
+    w.Header().Set(&quot;Content-Type&quot;, &quot;text/plain; charset=utf-8&quot;)
+    _, _ = w.Write([]byte(&quot;ok &quot; + version + &quot;\n&quot;))
+})
+</code></pre>
+<p>Check it on the VPS:</p>
+<pre><code class="language-sh">curl -fsS --connect-timeout 1 --max-time 3 \
+  http://127.0.0.1:8080/healthz
+</code></pre>
+<p>A development build returns <code>ok dev</code>. A release build can return its injected version. Use the port your app actually listens on.</p>
+<p>This checks whether Go can serve the request. The scaffold has no database yet, so this endpoint cannot honestly claim database health.</p>
+<p>Once useful requests depend on SQLite, add a separate readiness endpoint that performs one bounded read against an actual application table. Choose a query with a known result, such as reading the expected migration version. Give it a deadline and return a failure status if it cannot finish or the schema is wrong. Opening a connection alone does not prove your application data is usable.</p>
+<p>Keep the process check shallow. If an optional email provider is down, restarting an otherwise healthy Go process will not repair it. A database readiness failure should alert you or block a deploy; automatic restarts need their own justification.</p>
+<h2 id="check-the-public-path-from-somewhere-else">Check the public path from somewhere else</h2>
+<p>Run this from a machine other than the app&rsquo;s VPS:</p>
+<pre><code class="language-sh">curl -fsS --connect-timeout 2 --max-time 5 \
+  https://app.example.com/healthz
+</code></pre>
+<p>Use the real public hostname. Keep certificate verification enabled. A probe that skips TLS verification cannot catch the certificate problem your browser is reporting.</p>
+<p>HTTP success alone is still a weak contract. A misrouted proxy can serve a perfectly valid page from the wrong application. Check the status and expected body together:</p>
+<pre><code class="language-sh">#!/bin/sh
+set -eu
+
+url=${1:-https://app.example.com/healthz}
+expected=${EXPECTED_HEALTH:-ok dev}
+body=$(mktemp)
+trap 'rm -f &quot;$body&quot;' EXIT
+trap 'exit 1' HUP INT TERM
+
+status=$(curl -fsS --connect-timeout 2 --max-time 5 \
+  -o &quot;$body&quot; -w '%{http_code}' &quot;$url&quot;) || exit 1
+
+[ &quot;$status&quot; = 200 ] &amp;&amp; [ &quot;$(cat &quot;$body&quot;)&quot; = &quot;$expected&quot; ]
+</code></pre>
+<p>Save it as <code>check-app.sh</code> and invoke it with <code>sh</code>. Set <code>EXPECTED_HEALTH</code> to the deployed response. If you match a release identifier, update the monitor&rsquo;s expectation with each deploy. Otherwise, define a stable application-specific health response and verify the version separately in your deployment check.</p>
+<p>The script rejects redirects, error statuses, and unexpected bodies. Its <a href="https://curl.se/docs/manpage.html#--max-time">curl timeouts</a> bound the connection and overall request; those values are chosen defaults, not a measured availability guarantee.</p>
+<h2 id="a-failed-command-still-needs-a-human">A failed command still needs a human</h2>
+<p>A script on your laptop checks the site only while your laptop runs it. A timer on the primary VPS stops when that VPS disappears.</p>
+<p>Schedule the public probe on an independent machine or external monitor. Start with an interval appropriate to how quickly you need to know. Route failure to a notification channel you already read, include the hostname and time, and send a recovery notification when the check passes again.</p>
+<p>A nonzero exit in an unattended journal is not an alert. Verify the notification path using a disposable failing URL before relying on it. Also watch for missing probe runs: an external monitor can fail too.</p>
+<h2 id="the-failure-mode-green-on-localhost">The failure mode: green on localhost</h2>
+<p>When the local check passes and the public check fails, investigate the path between the probe and the process: DNS, firewall, certificate, proxy routing, and the probe&rsquo;s own network. Rebuilding the binary is not the first move.</p>
+<p>When both fail, inspect the service and host. When both pass but signups fail, the probes have reached their limit: add a controlled check of the signup flow. A healthy <code>/healthz</code> never promised that every route works.</p>
+<h2 id="when-to-outgrow-this">When to outgrow this</h2>
+<p>One outside location gives you one outside perspective. When the product needs faster detection, several regions, or shared on-call ownership, move scheduling and alerting to monitoring that supports those requirements. Keep the useful endpoint contracts. Add redundancy when the availability requirement warrants it.</p>
+<p>The first improvement is small enough to make today: check the app directly, check it through the public hostname from elsewhere, and make sure a failure reaches you.</p>
+<p><strong>Which layer can fail while your current health check still says green?</strong></p>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT / <a href="mailto:hello@boringstack.org">hello@boringstack.org</a></span>
+</footer>
+
+<noscript><img src="https://api.boringstack.org/v1/px.gif?p=/issues" alt="" width="1" height="1" style="position:absolute"></noscript>
+<script src="../analytics.js"></script>
+
+</body>
+</html>
