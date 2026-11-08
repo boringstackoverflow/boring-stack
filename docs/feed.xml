@@ -6,7 +6,15 @@
     <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 12 Sep 2026 17:21:48 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 08 Nov 2026 06:28:42 +0000</lastBuildDate>
+
+    <item>
+      <title>Your SQLite database belongs on the VPS</title>
+      <link>https://boringstack.org/issues/2026-11-07-your-sqlite-database-belongs-on-the-vps.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/2026-11-07-your-sqlite-database-belongs-on-the-vps.html</guid>
+      <pubDate>Sun, 08 Nov 2026 06:28:42 +0000</pubDate>
+      <description>Keep the live database on persistent local disk. Back it up off-site, preserve the WAL files, and prove you can recover when the entire VPS disappears.</description>
+    </item>
 
     <item>
       <title>The two health checks a one-VPS app actually needs</title>
