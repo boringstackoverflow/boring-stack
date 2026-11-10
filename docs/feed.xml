@@ -6,7 +6,15 @@
     <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 08 Nov 2026 06:28:42 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 10 Nov 2026 17:09:05 +0000</lastBuildDate>
+
+    <item>
+      <title>Useful Go logs with the standard library</title>
+      <link>https://boringstack.org/issues/2026-11-10-structured-go-logs.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/2026-11-10-structured-go-logs.html</guid>
+      <pubDate>Tue, 10 Nov 2026 17:09:05 +0000</pubDate>
+      <description>Give each important operation one completion event with a precise outcome, stable fields, and deliberately limited data.</description>
+    </item>
 
     <item>
       <title>Your SQLite database belongs on the VPS</title>

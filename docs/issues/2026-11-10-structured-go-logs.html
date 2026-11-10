@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Useful Go logs with the standard library — Boring Stack</title>
+<meta name="description" content="Give each important operation one completion event with a precise outcome, stable fields, and deliberately limited data.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-11-10-structured-go-logs.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Useful Go logs with the standard library">
+<meta property="og:description" content="Give each important operation one completion event with a precise outcome, stable fields, and deliberately limited data.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-11-10-structured-go-logs.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-11-10">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../"><img src="../favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="../showcase.html">showcase</a>
+    <a href="./">issues</a>
+    <a href="../#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">November 10, 2026 · issue #13</p>
+  <h1>Useful Go logs with the standard library</h1>
+  <!-- newsletter-plan: 27; scheduled: 2026-11-10 -->
+<p>A log line saying <code>save failed</code> cannot tell you which operation failed or which release produced it. For a small Go app, start with one completion event per important application operation: a stable name, an outcome, and a few chosen fields. Emit it where you know the final result.</p>
+<p>The current <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/scaffold/base/main.go.tmpl">Boring Stack scaffold</a> already constructs <code>slog.New(slog.NewTextHandler(os.Stdout, nil))</code> and records listening, listen failures, and shutdown failures. Its lifecycle logging is a starting point. Application events still need meanings you can rely on.</p>
+<h2 id="define-success-before-writing-the-log-call">Define success before writing the log call</h2>
+<p>For an example expense app, define <code>expense_save</code> as the result of one save attempt after validation. An <code>ok</code> outcome means the <a href="https://go.dev/doc/database/execute-transactions">transaction committed successfully</a>. A successful insert followed by a failed commit does not qualify; neither does starting background work that has yet to save anything.</p>
+<p>If you retry a busy database internally, emit the completion event after retries finish. Otherwise, one successful save can look like several failed operations. Give the caller responsible for the final result ownership of this event, rather than logging the same returned error in every function it passes through.</p>
+<p>Keep the message constant and put changing values in attributes. Start with service, release version, a server-generated request ID, outcome, and elapsed milliseconds. A numeric <code>duration_ms</code> stays comparable across events; mixing seconds, strings, and milliseconds under one key makes later queries unreliable.</p>
+<p>Go&rsquo;s <a href="https://go.dev/blog/slog">slog introduction</a> documents both built-in handlers: text keeps attributes readable at a terminal, while JSON preserves numeric types for downstream tools. The APIs used here arrived in Go 1.21; the <a href="https://go.dev/dl/">current stable download</a> is Go 1.27.3.</p>
+<h2 id="record-the-result-without-copying-the-request">Record the result without copying the request</h2>
+<p>Example: save this helper as <code>internal/applog/log.go</code> and create the logger once with <code>New(version)</code>. Capture <code>started := time.Now()</code> before the save operation, then call <code>SaveResult</code> once with its final error, after any commit attempt and retries. The caller must still handle that error and return the appropriate response.</p>
+<pre><code class="language-go">package applog
+
+import (
+	&quot;context&quot;
+	&quot;log/slog&quot;
+	&quot;os&quot;
+	&quot;time&quot;
+)
+
+func New(version string) *slog.Logger {
+	return slog.New(slog.NewJSONHandler(os.Stdout, nil)).
+		With(&quot;service&quot;, &quot;app&quot;, &quot;version&quot;, version)
+}
+
+func SaveResult(ctx context.Context, log *slog.Logger,
+	requestID string, started time.Time, err error,
+) {
+	level, outcome := slog.LevelInfo, &quot;ok&quot;
+	if err != nil {
+		level, outcome = slog.LevelError, &quot;failed&quot;
+	}
+
+	log.LogAttrs(ctx, level, &quot;expense_save&quot;,
+		slog.String(&quot;request_id&quot;, requestID),
+		slog.String(&quot;outcome&quot;, outcome),
+		slog.Int64(&quot;duration_ms&quot;, time.Since(started).Milliseconds()),
+	)
+}
+</code></pre>
+<p>Replace <code>app</code> with your service name. When replacing the scaffold&rsquo;s logger, remove the listening event&rsquo;s explicit version attribute, because <code>With</code> already supplies it. Pass this logger to the code handling saves.</p>
+<p>The default minimum level is Info, so both outcomes pass. <code>LogAttrs</code> accepts typed attributes, and passing a context does not automatically extract a request ID: this helper adds it explicitly. These behaviors are documented in the <a href="https://pkg.go.dev/log/slog">slog API reference</a>.</p>
+<p>The missing error string is deliberate. It reduces accidental disclosure at the cost of diagnostic detail; a failed event alone cannot distinguish a lock timeout from a full disk. When that distinction matters, add a fixed <code>error_kind</code> classification based on documented error types or codes, with an <code>unknown</code> fallback. Avoid classifying errors by matching their message text.</p>
+<p>Choose other fields by what you will investigate. A route template identifies a handler without recording a URL containing customer identifiers. Keep request bodies, cookies, authorization headers, magic links, and SQL parameter values out of these events. <a href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html">OWASP&rsquo;s logging guidance</a> identifies tokens, passwords, and sensitive personal data as information to exclude or protect.</p>
+<p>The easy failure is adding <code>&quot;error&quot;, err</code> or an entire request struct for convenience. Error strings can contain submitted values, and JSON encoding does not redact them. Review failure-path values before adding a field.</p>
+<h2 id="know-what-the-event-cannot-prove">Know what the event cannot prove</h2>
+<p>The <a href="https://github.com/boringstackoverflow/boring-stack/blob/main/templates/app.service">service template</a> sends stdout and stderr to the journal. With this setup, JSON <code>level</code> remains inside the message; journal priority is a separate value. Do not assume journal priority filters select your JSON Error events: <a href="https://raw.githubusercontent.com/systemd/systemd/main/man/systemd.exec.xml">systemd defaults stdout messages to Info</a>.</p>
+<p>There is also a gap between committing and logging: the process can die between those calls. The built-in handlers write synchronously, and <a href="https://pkg.go.dev/log/slog#Handler">Logger discards handler errors</a>. A returned logging call therefore proves neither durable storage nor a complete history. If the product requires a record of each change, write an audit record in the same database transaction.</p>
+<p>When you need off-host retention or searches across machines, forward the journal to a collector that parses the JSON. Keep the event names and field meanings. If profiling shows logging delaying requests, replace the handler or collection path and decide explicitly whether a full buffer blocks requests or drops events.</p>
+<p>Pick one database write today and define exactly what its success event promises before adding the log call.</p>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT / <a href="mailto:hello@boringstack.org">hello@boringstack.org</a></span>
+</footer>
+
+<noscript><img src="https://api.boringstack.org/v1/px.gif?p=/issues" alt="" width="1" height="1" style="position:absolute"></noscript>
+<script src="../analytics.js"></script>
+
+</body>
+</html>
