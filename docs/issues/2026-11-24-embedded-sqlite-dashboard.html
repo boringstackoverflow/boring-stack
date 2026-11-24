@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A private dashboard for SQLite pool waits — Boring Stack</title>
+<meta name="description" content="Embed a private page in your Go binary to see whether work queues for a SQLite connection during a slowdown.">
+<link rel="canonical" href="https://boringstack.org/issues/2026-11-24-embedded-sqlite-dashboard.html">
+
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../favicon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="A private dashboard for SQLite pool waits">
+<meta property="og:description" content="Embed a private page in your Go binary to see whether work queues for a SQLite connection during a slowdown.">
+<meta property="og:url" content="https://boringstack.org/issues/2026-11-24-embedded-sqlite-dashboard.html">
+<meta property="og:image" content="https://boringstack.org/og-image.png">
+<meta property="article:published_time" content="2026-11-24">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="alternate" type="application/rss+xml" title="Boring Stack Weekly" href="../feed.xml">
+</head>
+<body>
+
+<nav class="topbar" aria-label="primary">
+  <span class="nameplate"><a href="../"><img src="../favicon-32x32.png" alt="" width="22" height="22">Boring Stack</a></span>
+  <span class="links">
+    <a href="../manifesto.html">manifesto</a>
+    <a href="../showcase.html">showcase</a>
+    <a href="./">issues</a>
+    <a href="../#newsletter">newsletter</a>
+    <a href="https://github.com/boringstackoverflow/boring-stack">github</a>
+  </span>
+</nav>
+
+<article id="newsletter-body" class="issue">
+  <p class="issue-meta">November 24, 2026 · issue #14</p>
+  <h1>A private dashboard for SQLite pool waits</h1>
+  <!-- newsletter-plan: 29; scheduled: 2026-11-24 -->
+<p>Suppose a CSV import is running and saves in your Go app suddenly take longer. Add a private <code>/ops</code> page that reads <code>db.Stats()</code> from the connection pool your saves already use. Refresh it before and during the import. A rising wait count tells you Go queued at least one request for a connection, and you can read that counter while every connection is occupied because the page runs no SQL. <a href="https://pkg.go.dev/database/sql#DBStats">Go pool statistics</a> · <a href="https://go.dev/src/database/sql/sql.go#L1220">Go pool implementation</a></p>
+<h2 id="put-the-page-on-a-second-listener">Put the page on a second listener</h2>
+<p>The Boring Stack scaffold embeds <code>templates/*.html.tmpl</code> and parses those files into <code>pageTemplates</code>. Its reference Caddyfile sends every path on the app hostname to <code>127.0.0.1:8080</code>, so a dashboard registered on the main router would sit behind the public proxy. Give <code>/ops</code> its own router on <code>127.0.0.1:9091</code> and reach it over SSH. <a href="https://pkg.go.dev/embed">Go embed documentation</a> · <a href="https://caddyserver.com/docs/caddyfile/matchers">Caddy request matchers</a></p>
+<p>This example assumes you’ve already added SQLite through <code>database/sql</code> to a scaffolded app. Save the Go file as <code>ops.go</code> beside <code>main.go</code>. In <code>main</code>, after creating your long-lived <code>db</code> and <code>log</code>, add <code>ops := startOps(db, log)</code> followed by <code>defer ops.Close()</code>. Pass the write handle if you keep separate read and write pools.</p>
+<p>The route uses Go 1.22 pattern syntax, which the scaffold already uses. The current stable download as of November 24, 2026, is Go 1.27.4. <a href="https://pkg.go.dev/net/http#ServeMux">Go routing reference</a> · <a href="https://go.dev/dl/">Go downloads</a></p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;bytes&quot;
+	&quot;database/sql&quot;
+	&quot;errors&quot;
+	&quot;log/slog&quot;
+	&quot;net/http&quot;
+	&quot;time&quot;
+)
+
+func startOps(db *sql.DB, log *slog.Logger) *http.Server {
+	started := time.Now().UTC().Format(time.RFC3339Nano)
+	mux := http.NewServeMux()
+	mux.HandleFunc(&quot;GET 127.0.0.1/ops&quot;, func(w http.ResponseWriter, _ *http.Request) {
+		pool := db.Stats()
+		data := struct {
+			Version  string
+			Started  string
+			Sampled  string
+			WaitTime string
+			Pool     sql.DBStats
+		}{
+			Version:  version,
+			Started:  started,
+			Sampled:  time.Now().UTC().Format(time.RFC3339),
+			WaitTime: pool.WaitDuration.String(),
+			Pool:     pool,
+		}
+
+		var page bytes.Buffer
+		if err := pageTemplates.ExecuteTemplate(&amp;page, &quot;ops.html.tmpl&quot;, data); err != nil {
+			log.Error(&quot;render ops page&quot;, &quot;error&quot;, err)
+			http.Error(w, &quot;render ops page&quot;, http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set(&quot;Content-Type&quot;, &quot;text/html; charset=utf-8&quot;)
+		w.Header().Set(&quot;Cache-Control&quot;, &quot;no-store&quot;)
+		_, _ = w.Write(page.Bytes())
+	})
+
+	srv := &amp;http.Server{
+		Addr:              &quot;127.0.0.1:9091&quot;,
+		Handler:           mux,
+		ReadHeaderTimeout: 2 * time.Second,
+		WriteTimeout:      5 * time.Second,
+		IdleTimeout:       30 * time.Second,
+	}
+	go func() {
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Error(&quot;listen for ops requests&quot;, &quot;addr&quot;, srv.Addr, &quot;error&quot;, err)
+		}
+	}()
+	return srv
+}
+</code></pre>
+<p>Save the next file as <code>templates/ops.html.tmpl</code>, then rebuild. Start the binary locally and load <code>/ops</code> before deploying. The scaffold calls <code>template.Must</code> at startup, so a syntax error in the template can keep the whole app from starting. If port <code>9091</code> is taken on the VPS, the app logs the bind failure and can still serve public requests. <a href="https://pkg.go.dev/html/template#Must">Go template reference</a></p>
+<pre><code class="language-html">&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;SQLite connection pool&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;SQLite connection pool&lt;/h1&gt;
+  &lt;p&gt;Release {{.Version}}. Dashboard started {{.Started}}.&lt;/p&gt;
+  &lt;p&gt;Sampled {{.Sampled}}.&lt;/p&gt;
+  &lt;dl&gt;
+    &lt;dt&gt;Connections in use&lt;/dt&gt;&lt;dd&gt;{{.Pool.InUse}}&lt;/dd&gt;
+    &lt;dt&gt;Open connection limit&lt;/dt&gt;
+    &lt;dd&gt;{{if .Pool.MaxOpenConnections}}{{.Pool.MaxOpenConnections}}{{else}}Unlimited{{end}}&lt;/dd&gt;
+    &lt;dt&gt;Connection waits&lt;/dt&gt;&lt;dd&gt;{{.Pool.WaitCount}}&lt;/dd&gt;
+    &lt;dt&gt;Total time from ended waits&lt;/dt&gt;&lt;dd&gt;{{.WaitTime}}&lt;/dd&gt;
+  &lt;/dl&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>After deployment, run this from your laptop with an SSH account allowed to forward ports. <code>-L</code> with the explicit bind address puts the laptop end of the tunnel on loopback, and <code>-N</code> skips running a remote command. <code>ExitOnForwardFailure=yes</code> catches a failure to bind the local port. The HTTP request through the tunnel checks whether Go is actually listening at the destination. <a href="https://man.openbsd.org/ssh#L">OpenSSH client manual</a> · <a href="https://man.openbsd.org/ssh_config#ExitOnForwardFailure">OpenSSH forwarding option</a></p>
+<pre><code class="language-sh">ssh -N -o ExitOnForwardFailure=yes \
+  -L 127.0.0.1:9091:127.0.0.1:9091 deploy@your-vps.example.com
+</code></pre>
+<p>Open <code>http://127.0.0.1:9091/ops</code>. Use the numeric address because the route matches that HTTP host. Local processes on either machine can reach their respective loopback listener, so use machines you control and keep the page to aggregate counts and release metadata. Request <code>/ops</code> on the public HTTPS hostname too. With the reference Caddyfile and scaffold router, it should return <code>404</code>. <a href="https://pkg.go.dev/net/http#ServeMux">Go routing reference</a></p>
+<h2 id="read-the-change-between-refreshes">Read the change between refreshes</h2>
+<p><code>InUse</code> shows how much pool capacity is occupied when you sample. Compare it with the open connection limit, where zero means Go has no configured cap. <code>WaitCount</code> rises when a checkout queues, even when the caller eventually gives up. <code>WaitDuration</code> adds elapsed time when a wait ends, including on cancellation, so the count can rise while the duration stays flat. Compare samples from the same run and pool. <a href="https://pkg.go.dev/database/sql#DB.SetMaxOpenConns">Go connection limit</a> · <a href="https://go.dev/src/database/sql/sql.go#L1361">Go checkout implementation</a></p>
+<p>In a pool capped at one, an import transaction can hold the only connection while a save waits before its SQL runs. The counters cover every caller on that handle, so a jump during the import gives you a place to investigate. Check what happens between <code>BeginTx</code> and <code>Commit</code>. Moving CSV parsing before <code>BeginTx</code> can return the connection sooner while keeping the writes in one transaction. <a href="https://go.dev/doc/database/execute-transactions">Go transactions</a></p>
+<p>If the count stays flat from before a slow save until it returns, look for time spent after checkout. A save can already have a connection and still contend for SQLite’s write lock. WAL allows one writer at a time. <a href="https://sqlite.org/wal.html#concurrency">SQLite WAL concurrency</a></p>
+<p>The page needs no collector, and every sample depends on someone opening it. An afternoon wait total gives you no way to place a spike at lunchtime. A restart resets the counters, and a stopped app takes the page with it.</p>
+<p>When you need a timeline, register <code>collectors.NewDBStatsCollector(db, &quot;sqlite&quot;)</code> for the same handle and serve it at a private <code>/metrics</code> endpoint. Version 1.25.0 of the Go client requires Go 1.26 or later. Let Prometheus scrape over a private connection from another host so samples it already collected survive an app restart or VPS outage. <a href="https://pkg.go.dev/github.com/prometheus/client_golang@v1.25.0/prometheus/collectors#NewDBStatsCollector">Go collector reference</a> · <a href="https://github.com/prometheus/client_golang/releases/tag/v1.25.0">Client release notes</a> · <a href="https://prometheus.io/docs/introduction/overview/">Prometheus overview</a></p>
+<p>On a test database, record the wait count before your next import and refresh the page while you try a save.</p>
+
+</article>
+
+<footer>
+  <span><a href="./">← all issues</a> · <a href="../#newsletter">subscribe</a></span>
+  <span><a href="https://x.com/boringstack">@boringstack</a> / 2026 / MIT / <a href="mailto:hello@boringstack.org">hello@boringstack.org</a></span>
+</footer>
+
+<noscript><img src="https://api.boringstack.org/v1/px.gif?p=/issues" alt="" width="1" height="1" style="position:absolute"></noscript>
+<script src="../analytics.js"></script>
+
+</body>
+</html>

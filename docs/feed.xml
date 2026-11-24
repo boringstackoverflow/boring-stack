@@ -6,7 +6,15 @@
     <atom:link href="https://boringstack.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>One practical email each week on how to build web apps with Go + SQLite + Litestream + Caddy + a $5 VPS.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 10 Nov 2026 17:09:05 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 24 Nov 2026 17:09:08 +0000</lastBuildDate>
+
+    <item>
+      <title>A private dashboard for SQLite pool waits</title>
+      <link>https://boringstack.org/issues/2026-11-24-embedded-sqlite-dashboard.html</link>
+      <guid isPermaLink="true">https://boringstack.org/issues/2026-11-24-embedded-sqlite-dashboard.html</guid>
+      <pubDate>Tue, 24 Nov 2026 17:09:08 +0000</pubDate>
+      <description>Embed a private page in your Go binary to see whether work queues for a SQLite connection during a slowdown.</description>
+    </item>
 
     <item>
       <title>Useful Go logs with the standard library</title>
